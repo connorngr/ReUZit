@@ -50,13 +50,13 @@ public class Listing {
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private java.util.Date updatedAt;
-
+    //Created in db for the first time
     @PrePersist
     protected void onCreate() {
         this.createdAt = new java.util.Date();
         this.updatedAt = new java.util.Date();
     }
-
+    //When update
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = new java.util.Date();
