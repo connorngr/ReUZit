@@ -6,6 +6,7 @@ import com.connorng.ReUzit.model.Listing;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.repository.ListingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 import java.util.List;
 import java.util.Optional;
-
+//Add admin the permission later
 @Service
 public class ListingService {
     @Autowired
@@ -110,7 +111,25 @@ public class ListingService {
         return listingRepository.save(listing);
     }
 
-    public void deleteListing(Long id) {
-        listingRepository.deleteById(id);
+    public boolean deleteListing(Long listingId, String authenticatedEmail) {
+        Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
+        User authenticatedUser = userOptional.get();
+        Optional<Listing> listingOptional = listingRepository.findById(listingId);
+        if (!listingOptional.isPresent()) {
+            throw new IllegalArgumentException("Listing not found.");
+        }
+        //Get the object from optional
+        Listing listing = listingOptional.get();
+        // Check if the authenticated user owns the listing
+        if (!listing.getUser().getId().equals(authenticatedUser.getId())) {
+            throw new SecurityException("You are not authorized to update this listing.");
+        }
+        try {
+            listingRepository.deleteById(listingId);
+            return true;
+        }
+        catch (EmptyResultDataAccessException e) {
+            return false;
+        }
     }
 }
