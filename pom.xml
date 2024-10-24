@@ -89,20 +89,11 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
 			<version>2.20.26</version>
-			<exclusions>
-				<exclusion>
-					<groupId>software.amazon.awssdk</groupId>
-					<artifactId>netty-nio-client</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>software.amazon.awssdk</groupId>
-					<artifactId>apache-client</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 	</dependencies>
 

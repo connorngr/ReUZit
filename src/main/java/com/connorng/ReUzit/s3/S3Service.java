@@ -1,5 +1,6 @@
 package com.connorng.ReUzit.s3;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -12,16 +13,17 @@ import java.io.IOException;
 
 @Service
 public class S3Service {
+
     private final S3Client s3;
 
     public S3Service(S3Client s3) {
         this.s3 = s3;
     }
 
-    public void putObject(String string, String bucketName, byte[] file){
+    public void putObject(String bucketName, String key, byte[] file){
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(string)
+                .key(key)
                 .build();
         s3.putObject(objectRequest, RequestBody.fromBytes(file));
     }
@@ -34,8 +36,7 @@ public class S3Service {
         ResponseInputStream<GetObjectResponse> res = s3.getObject(getObjectRequest);
 
         try {
-            byte[] bytes = res.readAllBytes();
-            return bytes;
+            return res.readAllBytes();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

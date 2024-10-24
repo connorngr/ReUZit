@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -16,4 +19,5 @@ public class ListingRequest {
     private String status;
     private Long userId;  // ID of the user creating the listing
     private Long categoryId;  // ID of the category
+
 }

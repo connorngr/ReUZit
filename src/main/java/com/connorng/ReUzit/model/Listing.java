@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -40,8 +41,8 @@ public class Listing {
     @Column(nullable = false)
     private String status;  // e.g., active, sold, removed
 
-    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL)
-    private List<Image> images;
+    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -60,5 +61,26 @@ public class Listing {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = new java.util.Date();
+    }
+
+    public void addImage(Image image) {
+        images.add(image);
+        image.setListing(this); // Đảm bảo thiết lập mối quan hệ 2 chiều
+    }
+
+    // Phương thức tiện ích để xóa hình ảnh
+    public void removeImage(Image image) {
+        images.remove(image);
+        image.setListing(null);
+    }
+
+    @Override
+    public String toString() {
+        return "Listing{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                // không gọi images ở đây
+                '}';
     }
 }
