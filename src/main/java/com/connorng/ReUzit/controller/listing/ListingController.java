@@ -4,13 +4,18 @@ package com.connorng.ReUzit.controller.listing;
 import com.connorng.ReUzit.model.Listing;
 import com.connorng.ReUzit.service.ListingService;
 import com.connorng.ReUzit.service.UserService;
+import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -25,15 +30,29 @@ public class ListingController {
         return ResponseEntity.ok(listingService.getAllListings());
     }
 
-    @PostMapping
-    public ResponseEntity<Listing> createListing(@RequestBody ListingRequest listing) {
-        // Get the current authenticated user
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = null;
+    @GetMapping("/me")
+    public ResponseEntity<List<Listing>> getCurrentUserListings() {
+        // Get the current logged-in user's authentication
+        String email = userService.getCurrentUserEmail();
 
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            email = ((UserDetails) authentication.getPrincipal()).getUsername();  // Assuming the email is used as username
+        List<Listing> listings = listingService.getListingsByUserEmail(email);
+
+        if (listings.isEmpty()) {
+            return ResponseEntity.noContent().build();  // Returns 204 No Content if no listings found
         }
+
+        return ResponseEntity.ok(listings);  // Returns 200 OK with listings data
+    }
+
+    private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
+
+    @PostMapping
+    public ResponseEntity<Listing> createListing(@ModelAttribute ListingRequest listing) throws IOException {
+        // Get the current authenticated user
+//        logger.info("Received listing: {}", listing);
+//        System.out.println("Received title: " + listing.getTitle());
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = userService.getCurrentUserEmail();
 
         // Call the service to handle the listing creation
         Listing createdListing = listingService.createListing(listing, email);

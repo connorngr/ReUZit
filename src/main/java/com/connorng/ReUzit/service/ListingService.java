@@ -2,6 +2,7 @@ package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.controller.listing.ListingRequest;
 import com.connorng.ReUzit.model.Category;
+import com.connorng.ReUzit.model.Image;
 import com.connorng.ReUzit.model.Listing;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.repository.ListingRepository;
@@ -12,8 +13,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
 //Add admin the permission later
 @Service
 public class ListingService {
@@ -27,7 +37,19 @@ public class ListingService {
         return listingRepository.findAll();
     }
 
-    public Listing createListing(ListingRequest listing, String authenticatedEmail) {
+    public List<Listing> getListingsByUserEmail(String userEmail) {
+        // Find the user by email
+        Optional<User> userOptional = userService.findByEmail(userEmail);
+
+        if (!userOptional.isPresent()) {
+            throw new IllegalArgumentException("User not found.");
+        }
+
+        // Return listings of the user
+        return listingRepository.findByUser(userOptional);
+    }
+
+    public Listing createListing(ListingRequest listing, String authenticatedEmail) throws IOException {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
 
         if (!userOptional.isPresent()) {
@@ -50,8 +72,39 @@ public class ListingService {
         new_listing.setUser(userOptional.get());  // Set the authenticated user
         new_listing.setCategory(categoryOptional.get());  // Set the associated category
 
-        // Save the listing and return the response
+//        // Save the listing and return the response
+        List<Image> images = new ArrayList<>();
+        for (MultipartFile file : listing.getImages()) {
+            String imageUrl = saveFileToStorage(file);  // Implement your logic for saving the file
+            Image image = new Image();
+            image.setUrl(imageUrl);
+            image.setListing(new_listing);
+            images.add(image);
+        }
+        new_listing.setImages(images);
         return listingRepository.save(new_listing);
+    }
+    private String saveFileToStorage(MultipartFile file) throws IOException {
+        // Implement your file storage logic here
+        String uploadDir = "src/main/resources/static/uploads"; // You can change this to any directory you prefer
+
+        // Create the upload directory if it doesn't exist
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Generate a unique filename to avoid filename collisions
+        String filename = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
+
+        // Create the complete file path
+        Path filePath = uploadPath.resolve(filename);
+
+        // Save the file to the specified path
+        Files.copy(file.getInputStream(), filePath);
+
+        // Return the relative path where the file is saved
+        return "/uploads/" + filename; // Adjust the URL as necessary for your application
     }
 
     public Listing updateListing(Long listingId, ListingRequest listingRequest, String authenticatedEmail) {

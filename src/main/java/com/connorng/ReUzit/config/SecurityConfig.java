@@ -38,12 +38,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         auth -> auth
-                                .requestMatchers("/api/auth/**")
-                                .permitAll()
                                 .requestMatchers("/api/users/**")
                                 .hasRole("ADMIN")
-                                .requestMatchers("/api/listings/**")
+                                .requestMatchers("/api/users/me")
                                 .authenticated()
+                                .requestMatchers("/api/auth/**", "**")
+                                .permitAll()
                                 .anyRequest()
                                 .authenticated()
 
@@ -58,8 +58,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        //Make the below setting as * to allow connection from any hos
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173"));
+        //Make the below setting as * to allow connection from any host
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173/", "https://localhost:3000"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setAllowedHeaders(List.of("*"));
