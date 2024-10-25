@@ -2,6 +2,7 @@ package com.connorng.ReUzit.model;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -17,7 +18,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Builder
 @Entity
@@ -49,6 +52,15 @@ public class User implements UserDetails {
     @Size(min = 8, max = 100)
     private String password;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonManagedReference // Properly manages the listings reference
+    private Set<Listing> listings = new HashSet<>();
+
+    @Column(nullable = true)
+    private String imageUrl;
+//    @Lob
+//    @Column(columnDefinition = "BLOB")
+//    private byte[] imageData;
 
     @Enumerated(EnumType.STRING)
     private Role role;

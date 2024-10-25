@@ -1,11 +1,14 @@
 package com.connorng.ReUzit.model;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,6 +21,7 @@ public class Listing {
     private Long id;
 
     @ManyToOne
+    @JsonBackReference
     @JoinColumn(name = "user_id", nullable = false)
     private User user;  // Assuming User entity already exists
 
@@ -31,6 +35,7 @@ public class Listing {
     private Double price;
 
     @ManyToOne
+    @JsonBackReference
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
@@ -41,7 +46,8 @@ public class Listing {
     private String status;  // e.g., active, sold, removed
 
     @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL)
-    private List<Image> images;
+    @JsonManagedReference
+    private List<Image> images = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
