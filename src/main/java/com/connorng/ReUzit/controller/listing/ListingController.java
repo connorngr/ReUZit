@@ -6,6 +6,7 @@ import com.connorng.ReUzit.service.ListingService;
 import com.connorng.ReUzit.service.UserService;
 import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -46,26 +48,39 @@ public class ListingController {
 
     private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
 
-    @PostMapping
+//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<Listing> createListing(
+//            @RequestPart("listingRequest") ListingRequest listingRequest,
+//            @RequestPart(value = "images", required = false) List<MultipartFile> listingImageFiles) {
+
+        @PostMapping
     public ResponseEntity<Listing> createListing(@ModelAttribute ListingRequest listing) throws IOException {
         // Get the current authenticated user
-//        logger.info("Received listing: {}", listing);
-//        System.out.println("Received title: " + listing.getTitle());
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         String email = userService.getCurrentUserEmail();
+//        if (listingImageFiles == null) {
+//            listingImageFiles = Collections.emptyList();
+//        }
+
+            // Call the service to handle the listing creation with images
+//        Listing createdListing = listingService.createListing(listingRequest, email, listingImageFiles);
 
         // Call the service to handle the listing creation
         Listing createdListing = listingService.createListing(listing, email);
 
         return ResponseEntity.ok(createdListing);
     }
-
+//    @PutMapping(value = "/{id}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+//    public ResponseEntity<Listing> updateListing(@PathVariable Long id,
+//                                                 @RequestPart("listingRequest") ListingRequest listingRequest,
+//                                                 @RequestPart("images") List<MultipartFile> listingImageFiles) {
     @PutMapping("/{id}")
     public ResponseEntity<Listing> updateListing(@PathVariable Long id,
-                                                 @RequestBody ListingRequest listingRequest) {
+                                                 @RequestPart("listingRequest") ListingRequest listingRequest, @RequestPart("images") List<MultipartFile> listingImageFiles) {
         // Get the current authenticated user's email
         String email = userService.getCurrentUserEmail();
 
+        //Listing updatedListing = listingService.updateListing(id, listingRequest, email, listingImageFiles);
         // Delegate the update process to the service layer
         Listing updatedListing = listingService.updateListing(id, listingRequest, email);
 
@@ -85,4 +100,21 @@ public class ListingController {
         }
     }
 
+    @PostMapping(
+            value = "{id}/listing-image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public void uploadListingImage(
+            @PathVariable("id") Long id,
+            @RequestParam("files")List<MultipartFile> files
+            ){
+        listingService.uploadListingImage(files, id);
+    }
+
+    @GetMapping("{id}/listing-image")
+    public List<byte[]> getListingImage(
+            @PathVariable("id") Long id
+    ){
+        return listingService.getListingImages(id);
+    }
 }
