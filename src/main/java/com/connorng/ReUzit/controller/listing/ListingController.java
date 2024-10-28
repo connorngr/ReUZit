@@ -33,7 +33,11 @@ public class ListingController {
     private UserService userService;
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
-        return ResponseEntity.ok(listingService.getAllListings());
+        List<Listing> listings = listingService.getAllListings();
+        listings.forEach(listing -> {
+            listing.setCategoryId(listing.getCategory() != null ? listing.getCategory().getId() : null);
+        });
+        return ResponseEntity.ok(listings);
     }
 
     @GetMapping("/{id}")
@@ -106,7 +110,7 @@ public class ListingController {
         //Listing updatedListing = listingService.updateListing(id, listingRequest, email, listingImageFiles);
         // Delegate the update process to the service layer
         Listing updatedListing = listingService.updateListing(id, listing, email);
-
+        updatedListing.setCategoryId(updatedListing.getCategory() != null ? updatedListing.getCategory().getId() : null);
         return ResponseEntity.ok(updatedListing);
     }
 
@@ -116,10 +120,13 @@ public class ListingController {
                 .map(Long::parseLong)
                 .collect(Collectors.toList());
         String email = userService.getCurrentUserEmail();
-        boolean allDeleted = listingService.deleteListings(idList, email);
+        List<Long> failedDeletions = listingService.deleteListings(idList, email);
 
-        return allDeleted ? ResponseEntity.noContent().build()
-                : ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).build();
+        if (failedDeletions.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).build();
+        }
     }
 
 

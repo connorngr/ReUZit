@@ -102,4 +102,7 @@ public class User implements UserDetails {
         return UserDetails.super.isEnabled();
     }
 
+    public Role getRoles() {
+        return this.role;
+    }
 }

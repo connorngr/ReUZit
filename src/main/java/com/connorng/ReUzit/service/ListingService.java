@@ -190,9 +190,13 @@ public class ListingService {
         User authenticatedUser = userOptional.get();
 
         // Check if the authenticated user owns the listing
-        if (!listing.getUser().getId().equals(authenticatedUser.getId())) {
-            throw new SecurityException("You are not authorized to update this listing.");
+        boolean isAdmin = authenticatedUser.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+        System.out.println("Admin have role is: " + isAdmin);
+        if (!isAdmin && !listing.getUser().getId().equals(authenticatedUser.getId())) {
+            throw new SecurityException("You are not authorized to update listing with ID " + listingId);
         }
+
 
         // Optionally update the category
         if (listingRequest.getCategoryId() != null) {
@@ -277,12 +281,17 @@ public class ListingService {
 
     }
 
-    public boolean deleteListings(List<Long> ids, String authenticatedEmail) {
+    public List<Long> deleteListings(List<Long> ids, String authenticatedEmail) {
         // Lấy thông tin người dùng hiện tại
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         User authenticatedUser = userOptional.orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        boolean allDeleted = true;
+        // Danh sách ID không thể xóa
+        List<Long> failedDeletions = new ArrayList<>();
+
+        // Xác định nếu người dùng là Admin
+        boolean isAdmin = authenticatedUser.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
 
         for (Long listingId : ids) {
             try {
@@ -291,30 +300,23 @@ public class ListingService {
                 Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing with ID " + listingId + " not found"));
 
                 // Kiểm tra quyền sở hữu `listing`
-                if (!listing.getUser().getId().equals(authenticatedUser.getId())) {
+                if (!isAdmin && !listing.getUser().getId().equals(authenticatedUser.getId())) {
                     throw new SecurityException("You are not authorized to delete listing with ID " + listingId);
                 }
-
-                // Xóa các ảnh liên quan trên S3 (nếu có)
-//                if (listing.getImages() != null && !listing.getImages().isEmpty()) {
-//                    for (Image image : listing.getImages()) {
-//                        String filePath = "listing-images/%s/%s".formatted(listing.getId(), image.getUrl());
-//                        s3Service.deleteObject(s3Buckets.getListing(), filePath);
-//                    }
-//                }
 
                 // Xóa `listing` khỏi cơ sở dữ liệu
                 listingRepository.deleteById(listingId);
 
-            } catch (EmptyResultDataAccessException e) {
-                allDeleted = false; // Nếu `listing` không tồn tại, đánh dấu là không xóa được tất cả
-            } catch (RuntimeException e) {
-                allDeleted = false; // Nếu có lỗi quyền hoặc lỗi khác, đánh dấu là không xóa được tất cả
+            } catch (Exception e) {
+                // Nếu có lỗi, thêm ID vào danh sách thất bại và in ra lỗi cho debug
+                failedDeletions.add(listingId);
+                System.out.println("Failed to delete listing with ID " + listingId + ": " + e.getMessage());
             }
         }
 
-        return allDeleted;
+        return failedDeletions; // Trả về danh sách ID không xóa được, rỗng nếu xóa thành công toàn bộ
     }
+
 
 
 
