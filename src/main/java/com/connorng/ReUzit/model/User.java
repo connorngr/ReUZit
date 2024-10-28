@@ -53,20 +53,17 @@ public class User implements UserDetails {
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonManagedReference // Properly manages the listings reference
+    @JsonManagedReference
     private Set<Listing> listings = new HashSet<>();
 
     @Column(nullable = true)
     private String imageUrl;
-//    @Lob
-//    @Column(columnDefinition = "BLOB")
-//    private byte[] imageData;
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    private boolean locked = false;
 
-    //Authority serve the sub-function of role, write or read only for example.
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name())); //only one role
@@ -89,7 +86,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
+        return !locked;
     }
 
     @Override
