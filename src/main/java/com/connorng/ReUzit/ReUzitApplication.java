@@ -36,7 +36,7 @@ public class ReUzitApplication {
 	public CommandLineRunner runner(S3Service s3Service, S3Buckets s3Buckets) {
 		return args -> {
 //			testS3Buckets(s3Service, s3Buckets);
-			createSampleListing();
+//			createSampleListing();
 		};
 	}
 
@@ -80,14 +80,14 @@ public class ReUzitApplication {
 			MultipartFile imageFromUrl = createMultipartFileFromUrl(imageUrl);
 
 			// Tạo listing và thêm hình ảnh vào đó
-			Listing createdListing = listingService.createListing(
-					listingRequest,
-					"long15@gmail.com", // Email hợp lệ
-					Collections.singletonList(imageFromUrl) // Sử dụng danh sách chứa MultipartFile
-			);
+//			Listing createdListing = listingService.createListing(
+//					listingRequest,
+//					"long15@gmail.com", // Email hợp lệ
+//					Collections.singletonList(imageFromUrl) // Sử dụng danh sách chứa MultipartFile
+//			);
 
 			// Xuất thông tin listing đã tạo
-			System.out.println("Created Listing: " + createdListing);
+//			System.out.println("Created Listing: " + createdListing);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

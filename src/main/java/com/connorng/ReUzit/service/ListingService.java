@@ -40,16 +40,28 @@ public class ListingService {
     private UserService userService;
     @Autowired
     private CategoryService categoryService;
-    public List<Listing> getAllListings() {
-        return listingRepository.findAll();
-    }
+
     @Autowired
     private S3Service s3Service;
 
     @Autowired
     private S3Buckets s3Buckets;
 
-//    public Listing createListing(ListingRequest listingRequest, String authenticatedEmail, List<MultipartFile> listingImageFiles) {
+    public List<Listing> getAllListings() {
+        return listingRepository.findAll();
+    }
+
+    public Optional<Listing> getListingById(Long listingId, String userEmail) {
+        Optional<User> userOptional = userService.findByEmail(userEmail);
+
+        if (!userOptional.isPresent()) {
+            throw new IllegalArgumentException("User not found.");
+        }
+
+        return listingRepository.findById(listingId);
+    }
+
+    //    public Listing createListing(ListingRequest listingRequest, String authenticatedEmail, List<MultipartFile> listingImageFiles) {
     public List<Listing> getListingsByUserEmail(String userEmail) {
         // Find the user by email
         Optional<User> userOptional = userService.findByEmail(userEmail);
@@ -61,6 +73,7 @@ public class ListingService {
         // Return listings of the user
         return listingRepository.findByUser(userOptional);
     }
+
 
     //    public Listing createListing(ListingRequest listingRequest, String authenticatedEmail, List<MultipartFile> listingImageFiles) {
     public Listing createListing(ListingRequest listing, String authenticatedEmail) throws IOException {
@@ -163,7 +176,7 @@ public class ListingService {
         return "/uploads/" + filename; // Adjust the URL as necessary for your application
     }
 
-    public Listing updateListing(Long listingId, ListingRequest listingRequest, String authenticatedEmail) {
+    public Listing updateListing(Long listingId, ListingRequest listingRequest, String authenticatedEmail) throws IOException {
         // Fetch the existing listing from the database
         Optional<Listing> listingOptional = checkIfListingExists(listingId);
         Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing not found"));
@@ -210,6 +223,16 @@ public class ListingService {
         if (listingRequest.getStatus() != null) {
             listing.setStatus(listingRequest.getStatus());
         }
+        List<Image> images = new ArrayList<>();
+        for (MultipartFile file : listingRequest.getImages()) {
+            String imageUrl = saveFileToStorage(file);  // Implement your logic for saving the file
+            Image image = new Image();
+            image.setUrl(imageUrl);
+            image.setListing(listing);
+            images.add(image);
+        }
+        listing.setImages(images);
+        return listingRepository.save(listing);
         /*
 
         // Handle image updates
@@ -251,40 +274,48 @@ public class ListingService {
 
 
         */
-        return listingRepository.save(listing);
+
     }
 
-    public boolean deleteListing(Long listingId, String authenticatedEmail) {
+    public boolean deleteListings(List<Long> ids, String authenticatedEmail) {
+        // Lấy thông tin người dùng hiện tại
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         User authenticatedUser = userOptional.orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Check if the listing exists
-        Optional<Listing> listingOptional = checkIfListingExists(listingId);
-        Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing not found"));
+        boolean allDeleted = true;
 
-        // Check if the authenticated user owns the listing
-        if (!listing.getUser().getId().equals(authenticatedUser.getId())) {
-            throw new SecurityException("You are not authorized to delete this listing.");
-        }
-        try {
-            // Step 1: Remove associated images from S3
-//            if (listing.getImages() != null && !listing.getImages().isEmpty()) {
-//                for (Image image : listing.getImages()) {
-//                    String filePath = "listing-images/%s/%s".formatted(listing.getId(), image.getUrl());
-//                    s3Service.deleteObject(s3Buckets.getListing(), filePath);  // Remove image from S3
+        for (Long listingId : ids) {
+            try {
+                // Kiểm tra nếu `listing` tồn tại
+                Optional<Listing> listingOptional = checkIfListingExists(listingId);
+                Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing with ID " + listingId + " not found"));
+
+                // Kiểm tra quyền sở hữu `listing`
+                if (!listing.getUser().getId().equals(authenticatedUser.getId())) {
+                    throw new SecurityException("You are not authorized to delete listing with ID " + listingId);
+                }
+
+                // Xóa các ảnh liên quan trên S3 (nếu có)
+//                if (listing.getImages() != null && !listing.getImages().isEmpty()) {
+//                    for (Image image : listing.getImages()) {
+//                        String filePath = "listing-images/%s/%s".formatted(listing.getId(), image.getUrl());
+//                        s3Service.deleteObject(s3Buckets.getListing(), filePath);
+//                    }
 //                }
-//            }
 
-            // Step 2: Delete the listing from the database
-            listingRepository.deleteById(listingId);
-            return true;
+                // Xóa `listing` khỏi cơ sở dữ liệu
+                listingRepository.deleteById(listingId);
+
+            } catch (EmptyResultDataAccessException e) {
+                allDeleted = false; // Nếu `listing` không tồn tại, đánh dấu là không xóa được tất cả
+            } catch (RuntimeException e) {
+                allDeleted = false; // Nếu có lỗi quyền hoặc lỗi khác, đánh dấu là không xóa được tất cả
+            }
         }
-        catch (EmptyResultDataAccessException e) {
-            return false;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to delete listing and associated images", e);
-        }
+
+        return allDeleted;
     }
+
 
 
     private Optional<Listing> checkIfListingExists(Long listingId) {

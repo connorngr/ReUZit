@@ -42,7 +42,7 @@ public class SecurityConfig {
                                 .hasRole("ADMIN")
                                 .requestMatchers("/api/users/me")
                                 .authenticated()
-                                .requestMatchers("/api/auth/**", "**")
+                                .requestMatchers("/api/auth/**", "**", "/api/categories/**")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
@@ -60,7 +60,7 @@ public class SecurityConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         //Make the below setting as * to allow connection from any host
         corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173/", "https://localhost:3000"));
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST"));
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "DELETE", "PUT"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setMaxAge(3600L);

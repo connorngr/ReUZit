@@ -6,6 +6,7 @@ import com.connorng.ReUzit.service.ListingService;
 import com.connorng.ReUzit.service.UserService;
 import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,8 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/listings")
@@ -32,12 +36,31 @@ public class ListingController {
         return ResponseEntity.ok(listingService.getAllListings());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
+        String email = userService.getCurrentUserEmail();
+
+        Optional<Listing> listing = listingService.getListingById(id, email);
+
+        if (listing.isPresent()) {
+            Listing result = listing.get();
+            result.setCategoryId(result.getCategory() != null ? result.getCategory().getId() : null);
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.notFound().build();  // Returns 404 Not Found if listing not found
+        }
+    }
+
     @GetMapping("/me")
     public ResponseEntity<List<Listing>> getCurrentUserListings() {
         // Get the current logged-in user's authentication
         String email = userService.getCurrentUserEmail();
 
         List<Listing> listings = listingService.getListingsByUserEmail(email);
+
+        listings.forEach(listing -> {
+            listing.setCategoryId(listing.getCategory() != null ? listing.getCategory().getId() : null);
+        });
 
         if (listings.isEmpty()) {
             return ResponseEntity.noContent().build();  // Returns 204 No Content if no listings found
@@ -53,7 +76,7 @@ public class ListingController {
 //            @RequestPart("listingRequest") ListingRequest listingRequest,
 //            @RequestPart(value = "images", required = false) List<MultipartFile> listingImageFiles) {
 
-        @PostMapping
+    @PostMapping
     public ResponseEntity<Listing> createListing(@ModelAttribute ListingRequest listing) throws IOException {
         // Get the current authenticated user
 
@@ -76,29 +99,29 @@ public class ListingController {
 //                                                 @RequestPart("images") List<MultipartFile> listingImageFiles) {
     @PutMapping("/{id}")
     public ResponseEntity<Listing> updateListing(@PathVariable Long id,
-                                                 @RequestPart("listingRequest") ListingRequest listingRequest, @RequestPart("images") List<MultipartFile> listingImageFiles) {
+                                                 @ModelAttribute ListingRequest listing) throws IOException {
         // Get the current authenticated user's email
         String email = userService.getCurrentUserEmail();
 
         //Listing updatedListing = listingService.updateListing(id, listingRequest, email, listingImageFiles);
         // Delegate the update process to the service layer
-        Listing updatedListing = listingService.updateListing(id, listingRequest, email);
+        Listing updatedListing = listingService.updateListing(id, listing, email);
 
         return ResponseEntity.ok(updatedListing);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteListing(@PathVariable Long id) {
-        // Get the current authenticated user's email
+    @DeleteMapping
+    public ResponseEntity<Void> deleteListings(@RequestParam String ids) {
+        List<Long> idList = Arrays.stream(ids.split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
         String email = userService.getCurrentUserEmail();
-        boolean isDeleted = listingService.deleteListing(id, email);
+        boolean allDeleted = listingService.deleteListings(idList, email);
 
-        if (isDeleted) {
-            return ResponseEntity.noContent().build();  // 204 No Content if the deletion was successful
-        } else {
-            return ResponseEntity.notFound().build();   // 404 Not Found if the listing with the given id doesn't exist
-        }
+        return allDeleted ? ResponseEntity.noContent().build()
+                : ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).build();
     }
+
 
     @PostMapping(
             value = "{id}/listing-image",

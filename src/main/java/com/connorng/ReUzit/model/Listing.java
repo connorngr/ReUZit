@@ -39,6 +39,9 @@ public class Listing {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Transient // Chỉ dùng cho mục đích truyền thông tin, không lưu vào DB
+    private Long categoryId;
+
     @Column(nullable = false)
     private String condition;
 
