@@ -1,5 +1,7 @@
 package com.connorng.ReUzit.service;
 
+import com.connorng.ReUzit.exception.ResourceNotFoundException;
+import com.connorng.ReUzit.model.Role;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,9 +9,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -33,5 +37,17 @@ public class UserService {
             email = ((UserDetails) authentication.getPrincipal()).getUsername();  // Assuming email is used as username
         }
         return email;
+    }
+
+    public List<User> getAllNonAdminUsers() {
+        return userRepository.findByRoleNot(Role.ROLE_ADMIN);
+    }
+
+    @Transactional
+    public User toggleUserLock(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        user.setLocked(!user.isLocked());
+        return userRepository.save(user);
     }
 }
