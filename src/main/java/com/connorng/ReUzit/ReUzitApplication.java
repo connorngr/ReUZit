@@ -48,19 +48,19 @@ public class ReUzitApplication {
 		System.out.println("hooray: " + new String(obj));
 	}
 
-	private MultipartFile createMultipartFileFromUrl(String imageUrl) throws IOException {
-		// Đọc nội dung hình ảnh từ URL
-		InputStream inputStream = new URL(imageUrl).openStream();
-		byte[] imageContent = inputStream.readAllBytes();
-
-		// Tạo MultipartFile từ nội dung hình ảnh
-		return new CustomMultipartFile(
-				"image",
-				"sample-image.jpg", // Bạn có thể thay đổi tên file tùy ý
-				"image/jpeg", // Thay đổi content type nếu hình ảnh là khác
-				imageContent
-		);
-	}
+//	private MultipartFile createMultipartFileFromUrl(String imageUrl) throws IOException {
+//		// Đọc nội dung hình ảnh từ URL
+//		InputStream inputStream = new URL(imageUrl).openStream();
+//		byte[] imageContent = inputStream.readAllBytes();
+//
+//		// Tạo MultipartFile từ nội dung hình ảnh
+//		return new CustomMultipartFile(
+//				"image",
+//				"sample-image.jpg", // Bạn có thể thay đổi tên file tùy ý
+//				"image/jpeg", // Thay đổi content type nếu hình ảnh là khác
+//				imageContent
+//		);
+//	}
 
 	private void createSampleListing() {
 		ListingRequest listingRequest = new ListingRequest();
@@ -72,12 +72,12 @@ public class ReUzitApplication {
 		listingRequest.setUserId(1L);  // Replace with a valid user ID
 		listingRequest.setCategoryId(1L);  // Replace with a valid category ID
 
-		try {
+//		try {
 			// Nếu muốn sử dụng hình ảnh từ URL
 			String imageUrl = "https://upload.wikimedia.org/wikipedia/commons/b/ba/Flower_jtca001.jpg";
 
 			// Tạo MultipartFile từ URL
-			MultipartFile imageFromUrl = createMultipartFileFromUrl(imageUrl);
+//			MultipartFile imageFromUrl = createMultipartFileFromUrl(imageUrl);
 
 			// Tạo listing và thêm hình ảnh vào đó
 //			Listing createdListing = listingService.createListing(
@@ -88,9 +88,9 @@ public class ReUzitApplication {
 
 			// Xuất thông tin listing đã tạo
 //			System.out.println("Created Listing: " + createdListing);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 }

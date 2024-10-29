@@ -34,6 +34,7 @@ public class ListingController {
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
         List<Listing> listings = listingService.getAllListings();
+
         listings.forEach(listing -> {
             listing.setCategoryId(listing.getCategory() != null ? listing.getCategory().getId() : null);
         });
@@ -75,39 +76,22 @@ public class ListingController {
 
     private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
 
-//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<Listing> createListing(
-//            @RequestPart("listingRequest") ListingRequest listingRequest,
-//            @RequestPart(value = "images", required = false) List<MultipartFile> listingImageFiles) {
-
     @PostMapping
     public ResponseEntity<Listing> createListing(@ModelAttribute ListingRequest listing) throws IOException {
         // Get the current authenticated user
-
         String email = userService.getCurrentUserEmail();
-//        if (listingImageFiles == null) {
-//            listingImageFiles = Collections.emptyList();
-//        }
-
-            // Call the service to handle the listing creation with images
-//        Listing createdListing = listingService.createListing(listingRequest, email, listingImageFiles);
 
         // Call the service to handle the listing creation
         Listing createdListing = listingService.createListing(listing, email);
-
         return ResponseEntity.ok(createdListing);
     }
-//    @PutMapping(value = "/{id}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-//    public ResponseEntity<Listing> updateListing(@PathVariable Long id,
-//                                                 @RequestPart("listingRequest") ListingRequest listingRequest,
-//                                                 @RequestPart("images") List<MultipartFile> listingImageFiles) {
+
     @PutMapping("/{id}")
     public ResponseEntity<Listing> updateListing(@PathVariable Long id,
                                                  @ModelAttribute ListingRequest listing) throws IOException {
         // Get the current authenticated user's email
         String email = userService.getCurrentUserEmail();
 
-        //Listing updatedListing = listingService.updateListing(id, listingRequest, email, listingImageFiles);
         // Delegate the update process to the service layer
         Listing updatedListing = listingService.updateListing(id, listing, email);
         updatedListing.setCategoryId(updatedListing.getCategory() != null ? updatedListing.getCategory().getId() : null);
@@ -128,8 +112,7 @@ public class ListingController {
             return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).build();
         }
     }
-
-
+    // service AWS
     @PostMapping(
             value = "{id}/listing-image",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE

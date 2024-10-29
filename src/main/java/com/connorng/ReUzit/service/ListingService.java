@@ -9,12 +9,7 @@ import com.connorng.ReUzit.repository.ListingRepository;
 import com.connorng.ReUzit.s3.S3Buckets;
 import com.connorng.ReUzit.s3.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -22,11 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -81,55 +72,11 @@ public class ListingService {
         if (!userOptional.isPresent()) {
             throw new IllegalArgumentException("User not found.");
         }
-//        Listing Request ?
-//        Optional<Category> categoryOptional = categoryService.findById(listingRequest.getCategoryId());
         // Fetch the category by its ID
         Optional<Category> categoryOptional = categoryService.findById(listing.getCategoryId());
         if (!categoryOptional.isPresent()) {
             throw new IllegalArgumentException("Category not found.");
         }
-        // Step 3: "Request" Create the listing and set the associated user and category
-//        Listing newListing = new Listing();
-//        newListing.setTitle(listingRequest.getTitle());
-//        newListing.setDescription(listingRequest.getDescription());
-//        newListing.setPrice(listingRequest.getPrice());
-//        newListing.setCondition(listingRequest.getCondition());
-//        newListing.setStatus(listingRequest.getStatus());
-//        newListing.setUser(userOptional.get());  // Set the authenticated user
-//        newListing.setCategory(categoryOptional.get());  // Set the associated category
-//
-//        Listing savedListing = listingRepository.save(newListing);
-//
-//        // Step 5: If there are images, proceed to upload them
-//        if (listingImageFiles != null && !listingImageFiles.isEmpty()) {
-//            for (MultipartFile file : listingImageFiles) {
-//                String listingImageId = UUID.randomUUID().toString();  // Generate a new image ID
-//                String fileName = "listing-images/%s/%s".formatted(savedListing.getId(), listingImageId);  // File path in S3
-//
-//                try {
-//                    // Upload the image to S3
-//                    s3Service.putObject(
-//                            s3Buckets.getListing(),
-//                            fileName,
-//                            file.getBytes()
-//                    );
-//
-//                    // Create an Image entity and associate it with the saved listing
-//                    Image image = new Image();
-//                    image.setListing(savedListing);
-//                    image.setUrl(listingImageId);  // Use listingImageId as the key in the URL
-//
-//                    // Add the image to the listing
-//                    savedListing.getImages().add(image);
-//                } catch (IOException e) {
-//                    throw new RuntimeException("Failed to upload image", e);
-//                }
-//            }
-//
-//            // Save the listing again with the images
-//            listingRepository.save(savedListing);
-//        }
-//        return savedListing;
 
         // Create the listing and associate the fetched user and category
         Listing new_listing = new Listing();
@@ -141,7 +88,7 @@ public class ListingService {
         new_listing.setUser(userOptional.get());  // Set the authenticated user
         new_listing.setCategory(categoryOptional.get());  // Set the associated category
 
-//        // Save the listing and return the response
+        // Save the listing and return the response
         List<Image> images = new ArrayList<>();
         for (MultipartFile file : listing.getImages()) {
             String imageUrl = saveFileToStorage(file);  // Implement your logic for saving the file
@@ -197,7 +144,6 @@ public class ListingService {
             throw new SecurityException("You are not authorized to update listing with ID " + listingId);
         }
 
-
         // Optionally update the category
         if (listingRequest.getCategoryId() != null) {
             Optional<Category> categoryOptional = categoryService.findById(listingRequest.getCategoryId());
@@ -237,48 +183,6 @@ public class ListingService {
         }
         listing.setImages(images);
         return listingRepository.save(listing);
-        /*
-
-        // Handle image updates
-        if (listingImageFiles != null && !listingImageFiles.isEmpty()) {
-            // Step 1: Remove old images from S3 and the database
-            if (listing.getImages() != null && !listing.getImages().isEmpty()) {
-//                for (Image oldImage : listing.getImages()) {
-//                    String filePath = "listing-images/%s/%s".formatted(listing.getId(), oldImage.getUrl());
-//                    s3Service.deleteObject(s3Buckets.getListing(), filePath); // Remove from S3
-//                }
-                listing.getImages().clear();  // Clear the images in the database
-            }
-
-            // Step 2: Upload new images
-            for (MultipartFile file : listingImageFiles) {
-                String listingImageId = UUID.randomUUID().toString();  // Generate a new image ID
-                String fileName = "listing-images/%s/%s".formatted(listingId, listingImageId);  // File path in S3
-
-                try {
-                    // Upload the image to S3
-                    s3Service.putObject(
-                            s3Buckets.getListing(),
-                            fileName,
-                            file.getBytes()
-                    );
-
-                    // Create a new Image entity and associate it with the listing
-                    Image image = new Image();
-                    image.setListing(listing);
-                    image.setUrl(listingImageId);  // Use listingImageId as the key in the URL
-
-                    // Add the new image to the listing
-                    listing.getImages().add(image);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to upload image", e);
-                }
-            }
-        }
-
-
-        */
-
     }
 
     public List<Long> deleteListings(List<Long> ids, String authenticatedEmail) {
@@ -313,12 +217,8 @@ public class ListingService {
                 System.out.println("Failed to delete listing with ID " + listingId + ": " + e.getMessage());
             }
         }
-
         return failedDeletions; // Trả về danh sách ID không xóa được, rỗng nếu xóa thành công toàn bộ
     }
-
-
-
 
     private Optional<Listing> checkIfListingExists(Long listingId) {
         Optional<Listing> listingOptional = listingRepository.findById(listingId);
@@ -327,7 +227,6 @@ public class ListingService {
         }
         return listingOptional;
     }
-
 
     public void uploadListingImage(List<MultipartFile> listingImageFiles, Long id) {
         Optional<Listing> listingOptional = checkIfListingExists(id); // Check if the listing exists
