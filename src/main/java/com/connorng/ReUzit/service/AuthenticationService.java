@@ -43,7 +43,6 @@ public class AuthenticationService {
         if (imageUrl != null && !imageUrl.isEmpty()) {
             imageUrlPath = fileStorageService.saveFileToStorage(imageUrl);
         }
-        System.out.println("Toi da toi day");
         var user = User.builder()
                 .firstName(request.getFirstname())
                 .lastName(request.getLastname())
