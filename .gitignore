@@ -39,6 +39,7 @@ build/
 !**/src/test/**/build/
 
 src/main/resources/static/uploads/*
+uploads/*
 ### VS Code ###
 .vscode/
 .idea/

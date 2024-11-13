@@ -11,11 +11,9 @@ import com.connorng.ReUzit.s3.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.connorng.ReUzit.Common.FileStorageService;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -31,6 +29,9 @@ public class ListingService {
     private UserService userService;
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Autowired
     private S3Service s3Service;
@@ -91,7 +92,7 @@ public class ListingService {
         // Save the listing and return the response
         List<Image> images = new ArrayList<>();
         for (MultipartFile file : listing.getImages()) {
-            String imageUrl = saveFileToStorage(file);  // Implement your logic for saving the file
+            String imageUrl = fileStorageService.saveFileToStorage(file);  // Implement your logic for saving the file
             Image image = new Image();
             image.setUrl(imageUrl);
             image.setListing(new_listing);
@@ -100,28 +101,7 @@ public class ListingService {
         new_listing.setImages(images);
         return listingRepository.save(new_listing);
     }
-    private String saveFileToStorage(MultipartFile file) throws IOException {
-        // Implement your file storage logic here
-        String uploadDir = "src/main/resources/static/uploads"; // You can change this to any directory you prefer
 
-        // Create the upload directory if it doesn't exist
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // Generate a unique filename to avoid filename collisions
-        String filename = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
-
-        // Create the complete file path
-        Path filePath = uploadPath.resolve(filename);
-
-        // Save the file to the specified path
-        Files.copy(file.getInputStream(), filePath);
-
-        // Return the relative path where the file is saved
-        return "/uploads/" + filename; // Adjust the URL as necessary for your application
-    }
 
     public Listing updateListing(Long listingId, ListingRequest listingRequest, String authenticatedEmail) throws IOException {
         // Fetch the existing listing from the database
@@ -175,7 +155,7 @@ public class ListingService {
         }
         List<Image> images = new ArrayList<>();
         for (MultipartFile file : listingRequest.getImages()) {
-            String imageUrl = saveFileToStorage(file);  // Implement your logic for saving the file
+            String imageUrl = fileStorageService.saveFileToStorage(file);  // Implement your logic for saving the file
             Image image = new Image();
             image.setUrl(imageUrl);
             image.setListing(listing);
