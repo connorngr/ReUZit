@@ -43,13 +43,11 @@ public class ListingService {
         return listingRepository.findAll();
     }
 
-    public Optional<Listing> getListingById(Long listingId, String userEmail) {
-        Optional<User> userOptional = userService.findByEmail(userEmail);
+    public Listing findById(Long id) {
+        return listingRepository.findById(id).orElse(null);
+    }
 
-        if (!userOptional.isPresent()) {
-            throw new IllegalArgumentException("User not found.");
-        }
-
+    public Optional<Listing> getListingById(Long listingId) {
         return listingRepository.findById(listingId);
     }
 

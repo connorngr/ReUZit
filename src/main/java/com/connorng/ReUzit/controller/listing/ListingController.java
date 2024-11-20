@@ -43,9 +43,7 @@ public class ListingController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
-        String email = userService.getCurrentUserEmail();
-
-        Optional<Listing> listing = listingService.getListingById(id, email);
+        Optional<Listing> listing = listingService.getListingById(id);
 
         if (listing.isPresent()) {
             Listing result = listing.get();
@@ -70,7 +68,6 @@ public class ListingController {
         if (listings.isEmpty()) {
             return ResponseEntity.noContent().build();  // Returns 204 No Content if no listings found
         }
-
         return ResponseEntity.ok(listings);  // Returns 200 OK with listings data
     }
 

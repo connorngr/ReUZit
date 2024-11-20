@@ -50,6 +50,7 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ROLE_USER)
                 .imageUrl(imageUrlPath)
+                .money(0.0)
                 .build();
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);

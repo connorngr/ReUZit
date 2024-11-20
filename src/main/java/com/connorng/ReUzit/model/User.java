@@ -64,6 +64,9 @@ public class User implements UserDetails {
 
     private boolean locked = false;
 
+    @Column(nullable = false)
+    private Double money = 0.0;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name())); //only one role
