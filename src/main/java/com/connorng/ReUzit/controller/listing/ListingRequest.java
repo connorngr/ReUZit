@@ -20,4 +20,5 @@ public class ListingRequest {
     private List<MultipartFile> images;
     private Long userId;  // ID of the user creating the listing
     private Long categoryId;  // ID of the category
+
 }
