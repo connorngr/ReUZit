@@ -3,8 +3,6 @@ package com.connorng.ReUzit;
 import com.connorng.ReUzit.controller.listing.ListingRequest;
 import com.connorng.ReUzit.model.Image;
 import com.connorng.ReUzit.model.Listing;
-import com.connorng.ReUzit.s3.S3Buckets;
-import com.connorng.ReUzit.s3.S3Service;
 import com.connorng.ReUzit.service.ListingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

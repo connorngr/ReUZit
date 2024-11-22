@@ -6,8 +6,6 @@ import com.connorng.ReUzit.model.Image;
 import com.connorng.ReUzit.model.Listing;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.repository.ListingRepository;
-import com.connorng.ReUzit.s3.S3Buckets;
-import com.connorng.ReUzit.s3.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
