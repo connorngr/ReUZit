@@ -27,22 +27,22 @@ public class Payment {
     private Double amount;
 
     @Enumerated(EnumType.STRING)
-    private PaymentMethod method; // e.g., MOMO, BANK_TRANSFER, DIRECT
+    private PaymentStatus status; // e.g., PENDING, SUCCESS, FAILED
 
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status; // e.g., PENDING, SUCCESS, FAILED
+    private PaymentMethod method; // e.g., DIRECT, BANK_TRANSFER
 
     private String transactionId;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date paymentDate;
 
-    public enum PaymentMethod {
-        MOMO, BANK_TRANSFER, DIRECT
-    }
-
     public enum PaymentStatus {
         PENDING, SUCCESS, FAILED
+    }
+
+    public enum PaymentMethod {
+        DIRECT, BANK_TRANSFER, MOMO
     }
 }
 

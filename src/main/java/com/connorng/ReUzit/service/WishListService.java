@@ -1,11 +1,10 @@
 package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.model.Listing;
-import com.connorng.ReUzit.model.SelectedListing;
 import com.connorng.ReUzit.model.User;
-import com.connorng.ReUzit.repository.SelectedListingRepository;
+import com.connorng.ReUzit.model.WishList;
 import com.connorng.ReUzit.repository.ListingRepository;
-import com.connorng.ReUzit.repository.UserRepository;
+import com.connorng.ReUzit.repository.WishListRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +12,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class SelectedListingService {
+public class WishListService {
 
     @Autowired
-    private SelectedListingRepository selectedListingRepository;
+    private WishListRepository wishListRepository;
 
     @Autowired
     private UserService userService;
@@ -24,7 +23,7 @@ public class SelectedListingService {
     @Autowired
     private ListingRepository listingRepository;
 
-    public SelectedListing addToSelectedListings(String authenticatedEmail, Long listingId) {
+    public WishList addToWishList(String authenticatedEmail, Long listingId) {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         if (!userOptional.isPresent()) {
             throw new IllegalArgumentException("User not found.");
@@ -35,39 +34,39 @@ public class SelectedListingService {
         User user = userOptional.get();
         Long userId = user.getId();
 
-        SelectedListing selectedListing = new SelectedListing();
-        selectedListing.setUser(user);
-        selectedListing.setListing(listingOptional.get());
+        WishList wishList = new WishList();
+        wishList.setUser(user);
+        wishList.setListing(listingOptional.get());
 
-        return selectedListingRepository.save(selectedListing);
+        return wishListRepository.save(wishList);
     }
 
-    public void deleteSelectedListing(String email, Long selectedListingId) {
+    public void deleteWishList(String email, Long wishListId) {
         Optional<User> userOptional = userService.findByEmail(email);
         User authenticatedUser = userOptional.orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Optional<SelectedListing> selectedListingOptional = selectedListingRepository.findById(selectedListingId);
-        if (!selectedListingOptional.isPresent()) {
+        Optional<WishList> wishListOptional = wishListRepository.findById(wishListId);
+        if (!wishListOptional.isPresent()) {
             throw new IllegalArgumentException("Selected listing not found.");
         }
-        selectedListingRepository.deleteById(selectedListingId);
+        wishListRepository.deleteById(wishListId);
     }
 
-    public List<SelectedListing> getAllSelectedListingsByUserEmail(String email) {
+    public List<WishList> getAllWishListByUserEmail(String email) {
         Optional<User> userOptional = userService.findByEmail(email);
         if (!userOptional.isPresent()) {
             throw new IllegalArgumentException("User not found.");
         }
 
         User user = userOptional.get();
-        return selectedListingRepository.findAllByUser(user);
+        return wishListRepository.findAllByUser(user);
     }
 
-    public boolean isListingAlreadySelected(String email, Long listingId) {
+    public boolean isWishListAlready(String email, Long listingId) {
         User user = userService.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
 
-        return selectedListingRepository.existsByUserAndListingId(user, listingId);
+        return wishListRepository.existsByUserAndListingId(user, listingId);
     }
 
     private Optional<Listing> checkIfListingExists(Long listingId) {
@@ -78,14 +77,25 @@ public class SelectedListingService {
         return listingOptional;
     }
 
-    public void deleteSelectedListingByListingId(String email, Long listingId) {
-        // Tìm và xóa SelectedListing dựa trên email và listingId
-        SelectedListing selectedListing = selectedListingRepository.findByUserEmailAndListingId(email, listingId);
+    public void deleteWishListByListingId(String email, Long listingId) {
+        // Find and delete SelectedListing by email and listingId
+        WishList wishList = wishListRepository.findByUserEmailAndListingId(email, listingId);
 
-        if (selectedListing != null) {
-            selectedListingRepository.delete(selectedListing);
+        if (wishList != null) {
+            wishListRepository.delete(wishList);
         } else {
             throw new IllegalArgumentException("Selected listing not found.");
+        }
+    }
+
+    public void deleteWishListByUserAndListing(Long userId, Long listingId) {
+        // Find SelectedListing by userId và listingId
+        Optional<WishList> wishListOptional = wishListRepository.findByUserIdAndListingId(userId, listingId);
+
+        if (wishListOptional.isPresent()) {
+            wishListRepository.delete(wishListOptional.get());
+        } else {
+            throw new IllegalArgumentException("Selected listing not found for userId: " + userId + " and listingId: " + listingId);
         }
     }
 

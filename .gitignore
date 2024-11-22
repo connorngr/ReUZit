@@ -43,6 +43,7 @@ src/main/java/com/connorng/ReUzit/Common/vnpay/ajaxServlet.java
 src/main/java/com/connorng/ReUzit/Common/vnpay/vnpayQuery.java
 src/main/java/com/connorng/ReUzit/Common/vnpay/vnpayRefund.java
 uploads/*
+src/main/java/com/connorng/ReUzit/s3
 ### VS Code ###
 .vscode/
 .idea/

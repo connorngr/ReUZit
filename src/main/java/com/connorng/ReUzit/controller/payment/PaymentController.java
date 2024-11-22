@@ -1,14 +1,9 @@
 package com.connorng.ReUzit.controller.payment;
 
 import com.connorng.ReUzit.Common.vnpay.Config;
-import com.connorng.ReUzit.model.Listing;
-import com.connorng.ReUzit.model.Order;
-import com.connorng.ReUzit.model.Payment;
-import com.connorng.ReUzit.model.User;
-import com.connorng.ReUzit.service.ListingService;
-import com.connorng.ReUzit.service.OrderService;
-import com.connorng.ReUzit.service.PaymentService;
-import com.connorng.ReUzit.service.UserService;
+import com.connorng.ReUzit.model.*;
+import com.connorng.ReUzit.service.*;
+import com.connorng.ReUzit.service.WishListService;
 import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -35,11 +30,14 @@ public class PaymentController {
     @Autowired
     private ListingService listingService;
 
-    private final PaymentService paymentService;
+    @Autowired
+    private WishListService selectedListingService;
 
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
+    @Autowired
+    private PaymentService paymentService;
+
+    @Autowired
+    private TransactionService transactionService;
 
     @PostMapping
     public ResponseEntity<Payment> addPayment(@RequestBody Payment payment) {
@@ -72,20 +70,20 @@ public class PaymentController {
         String idListing = queryParams.get("idListing");
         String idUser = queryParams.get("idUser");
         String price = queryParams.get("vnp_Amount");
+        String transactionId = queryParams.get("vnp_TransactionNo");
         System.out.println("Listing:" + idListing + " and User:"+idUser + " and price:"+price);
 
         if (idListing == null || idUser == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing required parameters");
             return;
         }
-        System.out.println("Listing: " + idListing + " and User: " + idUser);
 
         if(idListing != null && !idListing.equals("")){
             if("00".equals(vnp_ResponseCode)) {
                 //transaction finish
                 //update database
                 try {
-                    // Lấy các đối tượng User và Listing từ database
+                    // Get object User and Listing from database
                     User user = userService.findById(Long.parseLong(idUser));
                     Listing listing = listingService.findById(Long.parseLong(idListing));
 
@@ -93,15 +91,33 @@ public class PaymentController {
                         response.sendError(HttpServletResponse.SC_NOT_FOUND, "User or Listing not found");
                         return;
                     }
-
-                    // Tạo đối tượng Order
+                    // Create object order
                     Order order = new Order();
                     order.setUser(user);
                     order.setListing(listing);
-                    order.setAmount(Double.parseDouble(price) / 100); // Giá trị từ API thường được trả về nhân 100
+                    order.setAmount(Double.parseDouble(price) / 100); // Value api usually return * 100
                     Order savedOrder = orderService.createOrder(order);
+                    // Create and save a new Payment record
+                    Payment payment = new Payment();
+                    payment.setOrder(savedOrder);
+                    payment.setAmount(Double.parseDouble(price) / 100);
+                    payment.setStatus(Payment.PaymentStatus.SUCCESS);
+                    payment.setMethod(Payment.PaymentMethod.BANK_TRANSFER);
+                    payment.setTransactionId(transactionId); // Generate transaction ID
+                    payment.setPaymentDate(new Date());
+                    Payment savedPayment = paymentService.addPayment(payment);
 
-                    System.out.println("Order created: " + savedOrder.getId());
+                    // add money for admin
+                    User userAdmin = userService.updateMoney("arty16@gmail.com", listing.getPrice());
+
+                    // **Create and save Transaction**
+                    Transaction transaction = new Transaction();
+                    transaction.setPayment(savedPayment); // Link with payment
+                    transaction.setSender(user); // seller (user)
+                    transaction.setReceiver(listing.getUser()); // Admin get money
+                    transaction.setAmount(savedPayment.getAmount());
+                    transaction.setTransactionDate(new Date());
+                    transactionService.addTransaction(transaction);
 
                 response.sendRedirect("http://localhost:5173/congratulation");
                 } catch (Exception e) {
@@ -113,7 +129,6 @@ public class PaymentController {
                 // solve database. ex: update transaction fail
                 response.sendRedirect("http://localhost:5173/transaction-failed");
             }
-
         }
     }
 

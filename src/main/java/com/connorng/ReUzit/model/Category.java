@@ -1,6 +1,7 @@
 package com.connorng.ReUzit.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,6 +23,6 @@ public class Category {
     private String name;
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "category")
+    @JsonIgnoreProperties("category")
     private Set<Listing> listings;
-
 }

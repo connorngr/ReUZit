@@ -1,21 +1,17 @@
 package com.connorng.ReUzit.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SelectedListing {
+public class WishList {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

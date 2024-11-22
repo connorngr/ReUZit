@@ -29,26 +29,21 @@ import java.util.stream.Collectors;
 public class ListingController {
     @Autowired
     private ListingService listingService;
+
     @Autowired
     private UserService userService;
+
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
         List<Listing> listings = listingService.getAllListings();
-
-        listings.forEach(listing -> {
-            listing.setCategoryId(listing.getCategory() != null ? listing.getCategory().getId() : null);
-        });
         return ResponseEntity.ok(listings);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
         Optional<Listing> listing = listingService.getListingById(id);
-
         if (listing.isPresent()) {
-            Listing result = listing.get();
-            result.setCategoryId(result.getCategory() != null ? result.getCategory().getId() : null);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(listing.get());
         } else {
             return ResponseEntity.notFound().build();  // Returns 404 Not Found if listing not found
         }
@@ -60,10 +55,6 @@ public class ListingController {
         String email = userService.getCurrentUserEmail();
 
         List<Listing> listings = listingService.getListingsByUserEmail(email);
-
-        listings.forEach(listing -> {
-            listing.setCategoryId(listing.getCategory() != null ? listing.getCategory().getId() : null);
-        });
 
         if (listings.isEmpty()) {
             return ResponseEntity.noContent().build();  // Returns 204 No Content if no listings found
@@ -91,7 +82,6 @@ public class ListingController {
 
         // Delegate the update process to the service layer
         Listing updatedListing = listingService.updateListing(id, listing, email);
-        updatedListing.setCategoryId(updatedListing.getCategory() != null ? updatedListing.getCategory().getId() : null);
         return ResponseEntity.ok(updatedListing);
     }
 
@@ -109,22 +99,5 @@ public class ListingController {
             return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).build();
         }
     }
-    // service AWS
-    @PostMapping(
-            value = "{id}/listing-image",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public void uploadListingImage(
-            @PathVariable("id") Long id,
-            @RequestParam("files")List<MultipartFile> files
-            ){
-        listingService.uploadListingImage(files, id);
-    }
 
-    @GetMapping("{id}/listing-image")
-    public List<byte[]> getListingImage(
-            @PathVariable("id") Long id
-    ){
-        return listingService.getListingImages(id);
-    }
 }

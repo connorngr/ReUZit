@@ -4,7 +4,7 @@ import com.connorng.ReUzit.model.Listing;
 import com.connorng.ReUzit.model.Payment;
 import com.connorng.ReUzit.repository.ListingRepository;
 import com.connorng.ReUzit.repository.PaymentRepository;
-import com.connorng.ReUzit.repository.SelectedListingRepository;
+import com.connorng.ReUzit.repository.WishListRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +15,7 @@ import java.util.Optional;
 public class PaymentService {
 
     @Autowired
-    private SelectedListingRepository selectedListingRepository;
+    private WishListRepository selectedListingRepository;
 
     @Autowired
     private UserService userService;

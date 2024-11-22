@@ -1,7 +1,7 @@
-package com.connorng.ReUzit.controller.selectedListing;
+package com.connorng.ReUzit.controller.wishList;
 
-import com.connorng.ReUzit.model.SelectedListing;
-import com.connorng.ReUzit.service.SelectedListingService;
+import com.connorng.ReUzit.service.WishListService;
+import com.connorng.ReUzit.model.WishList;
 import com.connorng.ReUzit.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,21 +10,21 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/selected-listings")
-public class SelectedListingController {
+@RequestMapping("/api/wishList")
+public class WishListController {
 
     @Autowired
-    private SelectedListingService selectedListingService;
+    private WishListService wishListService;
 
     @Autowired
     private UserService userService;
 
     @PostMapping("/add")
-    public ResponseEntity<SelectedListing> addSelectedListing(@RequestParam Long listingId) {
+    public ResponseEntity<WishList> addSelectedListing(@RequestParam Long listingId) {
         String email = userService.getCurrentUserEmail();
 
         try {
-            SelectedListing selectedListing = selectedListingService.addToSelectedListings(email, listingId);
+            WishList selectedListing = wishListService.addToWishList(email, listingId);
             return ResponseEntity.ok(selectedListing);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
@@ -36,7 +36,7 @@ public class SelectedListingController {
         String email = userService.getCurrentUserEmail();
 
         try {
-            List<SelectedListing> selectedListings = selectedListingService.getAllSelectedListingsByUserEmail(email);
+            List<WishList> selectedListings = wishListService.getAllWishListByUserEmail(email);
             return ResponseEntity.ok(selectedListings);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
@@ -48,7 +48,7 @@ public class SelectedListingController {
         String email = userService.getCurrentUserEmail();
 
         try {
-            selectedListingService.deleteSelectedListingByListingId(email, listingId);
+            wishListService.deleteWishListByListingId(email, listingId);
             return ResponseEntity.ok("Selected listing deleted successfully.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
@@ -60,7 +60,7 @@ public class SelectedListingController {
         String email = userService.getCurrentUserEmail();
 
         try {
-            boolean exists = selectedListingService.isListingAlreadySelected(email, listingId);
+            boolean exists = wishListService.isWishListAlready(email, listingId);
             return ResponseEntity.ok(exists);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(false);

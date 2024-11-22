@@ -25,27 +25,7 @@ import java.net.URL;
 @SpringBootApplication
 @ComponentScan(basePackages = "com.connorng.ReUzit")
 public class ReUzitApplication {
-
-	@Autowired
-	private ListingService listingService;
 	public static void main(String[] args) {
 		SpringApplication.run(ReUzitApplication.class, args);
 	}
-
-	@Bean
-	public CommandLineRunner runner(S3Service s3Service, S3Buckets s3Buckets) {
-		return args -> {
-		};
-	}
-
-	private static void testS3Buckets(S3Service s3Service, S3Buckets s3Buckets) {
-		s3Service.putObject(s3Buckets.getListing(), "foo", "Hello world".getBytes());
-
-		byte[] obj = s3Service.getObject(s3Buckets.getListing(), "foo");
-
-		System.out.println("hooray: " + new String(obj));
-	}
-
-
-
 }

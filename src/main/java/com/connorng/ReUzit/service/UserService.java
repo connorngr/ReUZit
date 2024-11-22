@@ -54,4 +54,26 @@ public class UserService {
         user.setLocked(!user.isLocked());
         return userRepository.save(user);
     }
+
+    public User updateMoney(Long userId, Double amount) {
+        // Find user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        // upadate money
+        user.setMoney(user.getMoney() + amount);
+
+        // Save change
+        return userRepository.save(user);
+    }
+
+    public User updateMoney(String email, Double amount) {
+        // Find user by email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        // upadate money
+        user.setMoney(user.getMoney() + amount);
+        // Save change
+        return userRepository.save(user);
+    }
 }
