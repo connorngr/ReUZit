@@ -35,15 +35,17 @@ public class Listing {
     private Double price;
 
     @ManyToOne
-    @JsonBackReference
+//    @JsonBackReference
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @Column(nullable = false)
-    private String condition;
+    @Enumerated(EnumType.STRING)
+    private Condition condition;
 
     @Column(nullable = false)
-    private String status;  // e.g., active, sold, removed
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL)
     @JsonManagedReference
