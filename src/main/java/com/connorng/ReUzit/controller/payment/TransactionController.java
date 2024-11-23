@@ -31,4 +31,11 @@ public class TransactionController {
         List<Transaction> transactions = transactionService.getAllOrdersBySellerEmail(email);
         return ResponseEntity.ok(transactions);
     }
+
+    @GetMapping("/buyer-orders")
+    public ResponseEntity<List<Transaction>> getBuyerOrders() {
+        String email = userService.getCurrentUserEmail(); // Assume this fetches the current user's email
+        List<Transaction> transactions = transactionService.getAllOrdersByBuyerEmail(email);
+        return ResponseEntity.ok(transactions);
+    }
 }
