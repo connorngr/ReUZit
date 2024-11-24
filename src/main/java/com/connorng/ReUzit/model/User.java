@@ -6,12 +6,8 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +21,7 @@ import java.util.Set;
 @Builder
 @Entity
 @Data
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "_user")
@@ -60,7 +57,7 @@ public class User implements UserDetails {
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Roles role;
 
     private boolean locked = false;
 
@@ -102,7 +99,7 @@ public class User implements UserDetails {
         return UserDetails.super.isEnabled();
     }
 
-    public Role getRoles() {
+    public Roles getRoles() {
         return this.role;
     }
 }

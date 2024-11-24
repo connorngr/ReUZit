@@ -1,7 +1,7 @@
 package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.exception.ResourceNotFoundException;
-import com.connorng.ReUzit.model.Role;
+import com.connorng.ReUzit.model.Roles;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class UserService {
     }
 
     public List<User> getAllNonAdminUsers() {
-        return userRepository.findByRoleNot(Role.ROLE_ADMIN);
+        return userRepository.findByRoleNot(Roles.ROLE_ADMIN);
     }
 
     @Transactional

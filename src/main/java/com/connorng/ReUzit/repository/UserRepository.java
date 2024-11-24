@@ -1,6 +1,6 @@
 package com.connorng.ReUzit.repository;
 
-import com.connorng.ReUzit.model.Role;
+import com.connorng.ReUzit.model.Roles;
 import com.connorng.ReUzit.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -12,5 +12,5 @@ import java.util.Optional;
 @Repository
 public interface UserRepository  extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
-    List<User> findByRoleNot(Role role);
+    List<User> findByRoleNot(Roles role);
 }

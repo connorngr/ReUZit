@@ -8,6 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+@Setter
+@Getter
 public class RegisterRequest {
     private String firstname;
     private String lastname;
