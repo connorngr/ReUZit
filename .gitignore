@@ -3,7 +3,11 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+/build/
 
+.gitignore
+
+.git/
 ### STS ###
 .apt_generated
 .classpath
@@ -19,6 +23,11 @@ target/
 *.iml
 *.ipr
 
+*.log
+*.tmp
+*.swp
+*.DS_Store
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -29,10 +38,19 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+src/main/resources/static/uploads/*
+src/main/java/com/connorng/ReUzit/Common/vnpay/ajaxServlet.java
+src/main/java/com/connorng/ReUzit/Common/vnpay/vnpayQuery.java
+src/main/java/com/connorng/ReUzit/Common/vnpay/vnpayRefund.java
+uploads/*
+src/main/java/com/connorng/ReUzit/s3
 ### VS Code ###
 .vscode/
+.idea/
 
+/node_modules/
 
 .env
+.aws/credentials
 application.properties
 application.yml

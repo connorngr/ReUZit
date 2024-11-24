@@ -35,7 +35,7 @@ public class Listing {
     private Double price;
 
     @ManyToOne
-//    @JsonBackReference
+    @JsonBackReference
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 

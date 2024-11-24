@@ -1,5 +1,7 @@
 package com.connorng.ReUzit.service;
 
+import com.connorng.ReUzit.exception.ResourceNotFoundException;
+import com.connorng.ReUzit.model.Roles;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,9 +9,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -24,6 +28,10 @@ public class UserService {
     }
     public Optional<User> findByEmail (String email) {return userRepository.findByEmail(email);}
 
+    public User findById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
     public String getCurrentUserEmail() {
         // Get the current authenticated user's email
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -33,5 +41,39 @@ public class UserService {
             email = ((UserDetails) authentication.getPrincipal()).getUsername();  // Assuming email is used as username
         }
         return email;
+    }
+
+    public List<User> getAllNonAdminUsers() {
+        return userRepository.findByRoleNot(Roles.ROLE_ADMIN);
+    }
+
+    @Transactional
+    public User toggleUserLock(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        user.setLocked(!user.isLocked());
+        return userRepository.save(user);
+    }
+
+    public User updateMoney(Long userId, Double amount) {
+        // Find user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        // upadate money
+        user.setMoney(user.getMoney() + amount);
+
+        // Save change
+        return userRepository.save(user);
+    }
+
+    public User updateMoney(String email, Double amount) {
+        // Find user by email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        // upadate money
+        user.setMoney(user.getMoney() + amount);
+        // Save change
+        return userRepository.save(user);
     }
 }

@@ -11,8 +11,11 @@ import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,12 +33,18 @@ public class AuthController {
     @Value("${secret-password}")
     private String defaultPassword;
 
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<AuthenticationResponse> register(
-            @RequestBody RegisterRequest request
-    ) {
-        return ResponseEntity.ok(authenticationService.register(request));
-    };
+            @RequestParam("user") String userJson,
+            @RequestParam("imageUrl") MultipartFile file) throws IOException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        RegisterRequest registerRequest = objectMapper.readValue(userJson, RegisterRequest.class);
+
+        AuthenticationResponse response = authenticationService.register(registerRequest, file);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(
             @RequestBody AuthenticationRequest request
@@ -53,7 +62,7 @@ public class AuthController {
         return ResponseEntity.ok(authenticationService.googleAuth(googleUser));
     }
 
-    private String processGrantCode(String code) throws JsonProcessingException {
+    private String processGrantCode(String code) throws JsonProcessingException, JsonProcessingException {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
