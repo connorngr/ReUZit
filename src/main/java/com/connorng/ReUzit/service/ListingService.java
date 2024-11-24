@@ -1,6 +1,7 @@
 package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.controller.listing.ListingRequest;
+import com.connorng.ReUzit.controller.listing.ListingUpdateRequest;
 import com.connorng.ReUzit.model.Category;
 import com.connorng.ReUzit.model.Image;
 import com.connorng.ReUzit.model.Listing;
@@ -88,7 +89,7 @@ public class ListingService {
         return listingRepository.save(new_listing);
     }
 
-    public Listing updateListing(Long listingId, ListingRequest listingRequest, String authenticatedEmail) throws IOException {
+    public Listing updateListing(Long listingId, ListingUpdateRequest listingUpdateRequest, String authenticatedEmail) throws IOException {
         // Fetch the existing listing from the database
         Optional<Listing> listingOptional = checkIfListingExists(listingId);
         Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing not found"));
@@ -109,8 +110,8 @@ public class ListingService {
         }
 
         // Optionally update the category
-        if (listingRequest.getCategoryId() != null) {
-            Optional<Category> categoryOptional = categoryService.findById(listingRequest.getCategoryId());
+        if (listingUpdateRequest.getCategoryId() != null) {
+            Optional<Category> categoryOptional = categoryService.findById(listingUpdateRequest.getCategoryId());
             if (!categoryOptional.isPresent()) {
                 throw new IllegalArgumentException("Category not found.");
             }
@@ -118,34 +119,26 @@ public class ListingService {
         }
 
         // Update other fields based on the request
-        if (listingRequest.getTitle() != null) {
-            listing.setTitle(listingRequest.getTitle());
+        if (listingUpdateRequest.getTitle() != null) {
+            listing.setTitle(listingUpdateRequest.getTitle());
         }
 
-        if (listingRequest.getDescription() != null) {
-            listing.setDescription(listingRequest.getDescription());
+        if (listingUpdateRequest.getDescription() != null) {
+            listing.setDescription(listingUpdateRequest.getDescription());
         }
 
-        if (listingRequest.getPrice() != null) {
-            listing.setPrice(listingRequest.getPrice());
+        if (listingUpdateRequest.getPrice() != null) {
+            listing.setPrice(listingUpdateRequest.getPrice());
         }
 
-        if (listingRequest.getCondition() != null) {
-            listing.setCondition(listingRequest.getCondition());
+        if (listingUpdateRequest.getCondition() != null) {
+            listing.setCondition(listingUpdateRequest.getCondition());
         }
 
-        if (listingRequest.getStatus() != null) {
-            listing.setStatus(listingRequest.getStatus());
+        if (listingUpdateRequest.getStatus() != null) {
+            listing.setStatus(listingUpdateRequest.getStatus());
         }
-        List<Image> images = new ArrayList<>();
-        for (MultipartFile file : listingRequest.getImages()) {
-            String imageUrl = fileStorageService.saveFileToStorage(file);  // Implement your logic for saving the file
-            Image image = new Image();
-            image.setUrl(imageUrl);
-            image.setListing(listing);
-            images.add(image);
-        }
-        listing.setImages(images);
+
         return listingRepository.save(listing);
     }
 

@@ -76,7 +76,7 @@ public class ListingController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Listing> updateListing(@PathVariable Long id,
-                                                 @ModelAttribute ListingRequest listing) throws IOException {
+                                                 @ModelAttribute ListingUpdateRequest listing) throws IOException {
         // Get the current authenticated user's email
         String email = userService.getCurrentUserEmail();
 

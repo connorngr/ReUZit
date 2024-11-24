@@ -23,6 +23,10 @@ public class TransactionService{
         return transactionRepository.findAllByReceiver_Email(email);
     }
 
+    public List<Transaction> getAllOrdersByBuyerEmail(String email) {
+        return transactionRepository.findAllBySender_Email(email);
+    }
+
     // Add the new findById method
     public Optional<Transaction> findById(Long transactionId) {
         return transactionRepository.findById(transactionId);

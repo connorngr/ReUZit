@@ -26,11 +26,11 @@ public class Transaction {
 
     @ManyToOne
     @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;  // maybe is buyer or admin
+    private User sender;  // maybe is seller or admin
 
     @ManyToOne
     @JoinColumn(name = "receiver_id", nullable = false)
-    private User receiver; // maybe is admin or seller
+    private User receiver; // maybe is admin or buyer
 
     private Double amount;
 
