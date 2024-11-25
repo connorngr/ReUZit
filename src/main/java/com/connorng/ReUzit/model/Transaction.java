@@ -32,8 +32,6 @@ public class Transaction {
     @JoinColumn(name = "receiver_id", nullable = false)
     private User receiver; // maybe is admin or buyer
 
-    private Double amount;
-
     @Temporal(TemporalType.TIMESTAMP)
     private Date transactionDate;
 }

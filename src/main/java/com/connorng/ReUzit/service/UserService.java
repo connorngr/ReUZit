@@ -55,7 +55,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateMoney(Long userId, Double amount) {
+    public User updateMoney(Long userId, Long amount) {
         // Find user
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
@@ -67,7 +67,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateMoney(String email, Double amount) {
+    public User updateMoney(String email, Long amount) {
         // Find user by email
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));

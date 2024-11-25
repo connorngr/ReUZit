@@ -29,19 +29,11 @@ public class Order {
     @JoinColumn(name = "listing_id", nullable = false)
     private Listing listing;
 
-    @Enumerated(EnumType.STRING)
-    private OrderStatus status;  // e.g., PENDING, COMPLETED, CANCELED
-
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date confirmationDate; // Date after 3 days if not disputed
 
-    private Double amount;
-
-    public enum OrderStatus {
-        PENDING, COMPLETED, CANCELED
-    }
 }
 

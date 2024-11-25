@@ -2,10 +2,7 @@ package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.controller.listing.ListingRequest;
 import com.connorng.ReUzit.controller.listing.ListingUpdateRequest;
-import com.connorng.ReUzit.model.Category;
-import com.connorng.ReUzit.model.Image;
-import com.connorng.ReUzit.model.Listing;
-import com.connorng.ReUzit.model.User;
+import com.connorng.ReUzit.model.*;
 import com.connorng.ReUzit.repository.ListingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -71,8 +68,8 @@ public class ListingService {
         new_listing.setTitle(listing.getTitle());
         new_listing.setDescription(listing.getDescription());
         new_listing.setPrice(listing.getPrice());
-        new_listing.setCondition(listing.getCondition());
-        new_listing.setStatus(listing.getStatus());
+        new_listing.setCondition(Condition.valueOf(listing.getCondition()));
+        new_listing.setStatus(Status.ACTIVE);
         new_listing.setUser(userOptional.get());  // Set the authenticated user
         new_listing.setCategory(categoryOptional.get());  // Set the associated category
 
@@ -132,11 +129,11 @@ public class ListingService {
         }
 
         if (listingUpdateRequest.getCondition() != null) {
-            listing.setCondition(listingUpdateRequest.getCondition());
+            listing.setCondition(Condition.valueOf(listingUpdateRequest.getCondition()));
         }
 
         if (listingUpdateRequest.getStatus() != null) {
-            listing.setStatus(listingUpdateRequest.getStatus());
+            listing.setStatus(Status.valueOf(listingUpdateRequest.getStatus()));
         }
 
         return listingRepository.save(listing);

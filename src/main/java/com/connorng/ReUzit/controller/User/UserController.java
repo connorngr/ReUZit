@@ -44,7 +44,7 @@ public class UserController {
     @PutMapping("/{id}/money")
     public ResponseEntity<User> updateUserMoney(
             @PathVariable Long id,
-            @RequestParam Double amount) {
+            @RequestParam Long amount) {
         try {
             // update money of user
             User updatedUser = userService.updateMoney(id, amount);

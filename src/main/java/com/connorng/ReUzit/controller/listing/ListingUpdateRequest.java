@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ListingUpdateRequest {
     private String title;
     private String description;
-    private Double price;
+    private Long price;
     private String condition;
     private String status;
     private Long userId;  // ID of the user creating the listing

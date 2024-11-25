@@ -2,6 +2,7 @@ package com.connorng.ReUzit.model;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -32,10 +33,9 @@ public class Listing {
     private String description;
 
     @Column(nullable = false)
-    private Double price;
+    private Long price;
 
     @ManyToOne
-    @JsonBackReference
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 

@@ -43,7 +43,6 @@ public class AuthenticationService {
         return true;
     };
 
-
     public AuthenticationResponse register(RegisterRequest request, MultipartFile imageUrl) throws IOException {
         Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
         if (existingUser.isPresent()) {
@@ -58,11 +57,10 @@ public class AuthenticationService {
                 .firstName(request.getFirstname())
                 .lastName(request.getLastname())
                 .email(request.getEmail())
-                .imageUrl(request.getImage_url())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Roles.ROLE_USER)
                 .imageUrl(imageUrlPath)
-                .money(0.0)
+                .money(0L)
                 .build();
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);

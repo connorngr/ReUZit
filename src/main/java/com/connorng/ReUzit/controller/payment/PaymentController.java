@@ -95,7 +95,7 @@ public class PaymentController {
                     Order order = new Order();
                     order.setUser(user);
                     order.setListing(listing);
-                    order.setAmount(Double.parseDouble(price) / 100); // Value api usually return * 100
+                    order.getListing().setPrice(Long.parseLong(price)); // Value api usually return * 100
                     Order savedOrder = orderService.createOrder(order);
                     // Create and save a new Payment record
                     Payment payment = new Payment();
@@ -115,7 +115,6 @@ public class PaymentController {
                     transaction.setPayment(savedPayment); // Link with payment
                     transaction.setSender(user); // seller (user)
                     transaction.setReceiver(listing.getUser()); // Admin get money
-                    transaction.setAmount(savedPayment.getAmount());
                     transaction.setTransactionDate(new Date());
                     transactionService.addTransaction(transaction);
 

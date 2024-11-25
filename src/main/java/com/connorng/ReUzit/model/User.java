@@ -62,7 +62,7 @@ public class User implements UserDetails {
     private boolean locked = false;
 
     @Column(nullable = false)
-    private Double money = 0.0;
+    private Long money = 0L;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -1,6 +1,7 @@
 package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.model.Order;
+import com.connorng.ReUzit.model.Status;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.model.Transaction;
 import com.connorng.ReUzit.repository.OrderRepository;
@@ -24,7 +25,7 @@ public class OrderService {
     private UserService userService;
 
     public Order createOrder(Order order) {
-        order.setStatus(Order.OrderStatus.PENDING);
+        order.getListing().setStatus(Status.SOLD);
         order.setOrderDate(new Date());
         // setConfirmationDate
         Calendar calendar = Calendar.getInstance();
@@ -35,7 +36,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order updateOrderStatus(Long orderId, Order.OrderStatus status, Long transactionId) {
+    public Order updateOrderStatus(Long orderId, Status status, Long transactionId) {
         Optional<Order> orderOptional = orderRepository.findById(orderId);
         if (orderOptional.isPresent()) {
             Order order = orderOptional.get();
@@ -50,12 +51,12 @@ public class OrderService {
             Transaction transaction = transactionOptional.get();
             User seller = transaction.getReceiver(); // Assuming receiver is the seller
             User buyer = transaction.getSender();   // Assuming sender is the buyer
-            double amount = order.getAmount();
+            Long amount = order.getListing().getPrice();
 
             // Update based on status
-            if (status == Order.OrderStatus.COMPLETED) {
+            if (status == Status.SOLD) {
                 order.setConfirmationDate(new Date());
-                double adminFee = amount * 0.1; // Admin takes a 10% fee
+                Long adminFee = (long) (amount * 0.1); // Admin takes a 10% fee
                 seller.setMoney(seller.getMoney() + (amount - adminFee));
                 userService.createUser(seller);
 
@@ -63,7 +64,7 @@ public class OrderService {
                         .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
                 admin.setMoney(admin.getMoney() - (amount - adminFee));
                 userService.createUser(admin);
-            } else if (status == Order.OrderStatus.CANCELED) {
+            } else if (status == Status.INACTIVE) {
                 // Refund amount from admin to buyer
                 buyer.setMoney(buyer.getMoney() + amount);
                 userService.createUser(buyer);
@@ -74,7 +75,7 @@ public class OrderService {
                 admin.setMoney(admin.getMoney() - amount);
                 userService.createUser(admin);
             }
-            order.setStatus(status);
+            order.getListing().setStatus(status);
             return orderRepository.save(order);
         }
         throw new RuntimeException("Order not found with ID: " + orderId);
