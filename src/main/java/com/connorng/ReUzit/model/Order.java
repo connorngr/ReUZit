@@ -35,5 +35,9 @@ public class Order {
     @Temporal(TemporalType.TIMESTAMP)
     private Date confirmationDate; // Date after 3 days if not disputed
 
+    @ManyToOne
+    @JoinColumn(name = "address_id", nullable = false)
+    private Address shippingAddress;
+
 }
 

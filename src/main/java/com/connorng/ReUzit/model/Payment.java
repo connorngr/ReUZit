@@ -24,8 +24,6 @@ public class Payment {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    private Double amount;
-
     @Enumerated(EnumType.STRING)
     private PaymentStatus status; // e.g., PENDING, SUCCESS, FAILED
 
@@ -42,7 +40,7 @@ public class Payment {
     }
 
     public enum PaymentMethod {
-        DIRECT, BANK_TRANSFER, MOMO
+        COD, BANK_TRANSFER, MOMO
     }
 }
 

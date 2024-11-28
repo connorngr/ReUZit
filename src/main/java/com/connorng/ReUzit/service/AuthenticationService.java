@@ -1,6 +1,6 @@
 package com.connorng.ReUzit.service;
 
-import com.connorng.ReUzit.Common.FileStorageService;
+import com.connorng.ReUzit.common.FileStorageService;
 import com.connorng.ReUzit.controller.auth.AuthenticationRequest;
 import com.connorng.ReUzit.controller.auth.AuthenticationResponse;
 import com.connorng.ReUzit.controller.auth.RegisterRequest;
@@ -12,12 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
@@ -61,6 +61,7 @@ public class AuthenticationService {
                 .role(Roles.ROLE_USER)
                 .imageUrl(imageUrlPath)
                 .money(0L)
+                .addresses(new ArrayList<>())
                 .build();
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);

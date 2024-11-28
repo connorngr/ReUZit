@@ -27,4 +27,10 @@ public class Category {
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "category")
     @JsonIgnoreProperties("category")
     private Set<Listing> listings;
+
+    @Override
+    public String toString() {
+        return "Category{id=" + id + ", name='" + name + "'}";
+    }
+
 }

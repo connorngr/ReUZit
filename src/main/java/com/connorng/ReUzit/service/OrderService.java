@@ -1,9 +1,6 @@
 package com.connorng.ReUzit.service;
 
-import com.connorng.ReUzit.model.Order;
-import com.connorng.ReUzit.model.Status;
-import com.connorng.ReUzit.model.User;
-import com.connorng.ReUzit.model.Transaction;
+import com.connorng.ReUzit.model.*;
 import com.connorng.ReUzit.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +22,6 @@ public class OrderService {
     private UserService userService;
 
     public Order createOrder(Order order) {
-        order.getListing().setStatus(Status.SOLD);
         order.setOrderDate(new Date());
         // setConfirmationDate
         Calendar calendar = Calendar.getInstance();
@@ -53,27 +49,38 @@ public class OrderService {
             User buyer = transaction.getSender();   // Assuming sender is the buyer
             Long amount = order.getListing().getPrice();
 
-            // Update based on status
-            if (status == Status.SOLD) {
-                order.setConfirmationDate(new Date());
-                Long adminFee = (long) (amount * 0.1); // Admin takes a 10% fee
-                seller.setMoney(seller.getMoney() + (amount - adminFee));
-                userService.createUser(seller);
+            if (transaction.getPayment().getMethod().name().equals("BANK_TRANSFER")) {
+                // Update based on status
+                if (status == Status.SOLD) {
+                    order.setConfirmationDate(new Date());
+                    Long adminFee = (long) (amount * 0.1); // Admin takes a 10% fee
+                    seller.setMoney(seller.getMoney() + (amount - adminFee));
+                    userService.createUser(seller);
 
-                User admin = userService.findByEmail("arty16@gmail.com")
-                        .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
-                admin.setMoney(admin.getMoney() - (amount - adminFee));
-                userService.createUser(admin);
-            } else if (status == Status.INACTIVE) {
-                // Refund amount from admin to buyer
-                buyer.setMoney(buyer.getMoney() + amount);
-                userService.createUser(buyer);
+                    User admin = userService.findByEmail("arty16@gmail.com")
+                            .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
+                    admin.setMoney(admin.getMoney() - (amount - adminFee));
+                    userService.createUser(admin);
+                }
+                if (status == Status.INACTIVE) {
+                    // Refund amount from admin to buyer
+                    buyer.setMoney(buyer.getMoney() + amount);
+                    userService.createUser(buyer);
 
-                // Deduct from admin account
-                User admin = userService.findByEmail("arty16@gmail.com")
-                        .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
-                admin.setMoney(admin.getMoney() - amount);
-                userService.createUser(admin);
+                    // Deduct from admin account
+                    User admin = userService.findByEmail("arty16@gmail.com")
+                            .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
+                    admin.setMoney(admin.getMoney() - amount);
+                    userService.createUser(admin);
+                }
+            }
+            if (transaction.getPayment().getMethod().name().equals("COD")) {
+                if (status == Status.SOLD) {
+                    transaction.getPayment().setStatus(Payment.PaymentStatus.SUCCESS);
+                }
+                if (status == Status.INACTIVE) {
+                    transaction.getPayment().setStatus(Payment.PaymentStatus.FAILED);
+                }
             }
             order.getListing().setStatus(status);
             return orderRepository.save(order);

@@ -7,12 +7,11 @@ import com.connorng.ReUzit.repository.ListingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import com.connorng.ReUzit.Common.FileStorageService;
+import com.connorng.ReUzit.common.FileStorageService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ImageService {
