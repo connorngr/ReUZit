@@ -71,8 +71,10 @@ public class PaymentController {
 
     @PostMapping("/createCodOrder")
     public ResponseEntity<Order> createCodOrder(
-            @RequestBody PaymentRequest order) {
-        System.out.println(order);
+            @RequestParam Long idListing, @RequestParam Long idAddress) {
+
+        System.out.println(idAddress+"+"+ idListing);
+
         String authenticatedEmail = userService.getCurrentUserEmail();
         // Lấy thông tin người dùng từ email đã xác thực
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
@@ -82,13 +84,13 @@ public class PaymentController {
         User user = userOptional.get();
 
         // Lấy thông tin danh sách sản phẩm từ idListing
-        Listing listing = listingService.findById(order.getListing().getId());
+        Listing listing = listingService.findById(idListing);
         if (listing == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Sản phẩm không tồn tại
         }
 
         // Lấy địa chỉ giao hàng từ idAddress
-        Address address = addressService.getAddressById(order.getShippingAddress().getId());
+        Address address = addressService.getAddressById(idAddress);
         if (address == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Địa chỉ không tồn tại
         }
@@ -99,7 +101,7 @@ public class PaymentController {
         newOrder.setUser(user);
         newOrder.setListing(listing);
         newOrder.setOrderDate(new Date());
-        newOrder.getListing().setPrice(order.getListing().getPrice());  // Sử dụng giá đã gửi từ yêu cầu
+        newOrder.getListing().setPrice(listing.getPrice());  // Sử dụng giá đã gửi từ yêu cầu
         Order savedOrder = orderService.createOrder(newOrder);
 
         // Tạo đối tượng Payment với trạng thái PENDING cho COD

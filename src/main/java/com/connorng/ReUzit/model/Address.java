@@ -36,7 +36,6 @@ public class Address {
     @Size(min = 5, max = 255)
     private String street; // Địa chỉ chi tiết
 
-    @NotNull
     @Size(min = 2, max = 100)
     private String city; // Thành phố
 
