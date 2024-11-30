@@ -29,7 +29,7 @@ public class Listing {
     @Column(nullable = false)
     private String title;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT") // Sử dụng kiểu TEXT trong cơ sở dữ liệu
     private String description;
 
     @Column(nullable = false)

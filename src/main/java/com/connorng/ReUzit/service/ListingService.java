@@ -34,6 +34,10 @@ public class ListingService {
         return listingRepository.findAll();
     }
 
+    public List<Listing> getAllActiveListings() {
+        return listingRepository.findByStatus("ACTIVE");
+    }
+
     public Listing findById(Long id) {
         return listingRepository.findById(id).orElse(null);
     }
@@ -66,6 +70,9 @@ public class ListingService {
             throw new IllegalArgumentException("Category not found.");
         }
 
+        User user = userOptional.get();
+        user.setMoney(user.getMoney() - 5000);
+        userService.createUser(user);
         // Create the listing and associate the fetched user and category
         Listing new_listing = new Listing();
         new_listing.setTitle(listing.getTitle());
@@ -73,7 +80,7 @@ public class ListingService {
         new_listing.setPrice(listing.getPrice());
         new_listing.setCondition(Condition.valueOf(listing.getCondition()));
         new_listing.setStatus(Status.ACTIVE);
-        new_listing.setUser(userOptional.get());  // Set the authenticated user
+        new_listing.setUser(user);  // Set the authenticated user
         new_listing.setCategory(categoryOptional.get());  // Set the associated category
 
         // Save the listing and return the response
@@ -133,10 +140,6 @@ public class ListingService {
 
         if (listingUpdateRequest.getCondition() != null) {
             listing.setCondition(Condition.valueOf(listingUpdateRequest.getCondition()));
-        }
-
-        if (listingUpdateRequest.getStatus() != null) {
-            listing.setStatus(Status.valueOf(listingUpdateRequest.getStatus()));
         }
 
         return listingRepository.save(listing);

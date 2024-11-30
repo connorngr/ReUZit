@@ -81,6 +81,7 @@ public class OrderService {
                 if (status == Status.INACTIVE) {
                     transaction.getPayment().setStatus(Payment.PaymentStatus.FAILED);
                 }
+                transactionService.addTransaction(transaction);
             }
             order.getListing().setStatus(status);
             return orderRepository.save(order);

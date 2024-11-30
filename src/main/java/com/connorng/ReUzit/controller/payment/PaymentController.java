@@ -119,6 +119,8 @@ public class PaymentController {
         transaction.setSender(user);  // Người mua
         transaction.setReceiver(listing.getUser());  // Người bán (admin)
         transaction.setTransactionDate(new Date());
+        transaction.setTransactionType(TransactionType.PRODUCT_SALE);
+        transaction.setAmount(listing.getPrice());
         transactionService.addTransaction(transaction);
 
         // Cập nhật trạng thái sản phẩm thành ACTIVE
@@ -184,6 +186,8 @@ public class PaymentController {
                     transaction.setSender(user); // seller (user)
                     transaction.setReceiver(listing.getUser()); // Admin get money
                     transaction.setTransactionDate(new Date());
+                    transaction.setTransactionType(TransactionType.PRODUCT_SALE);
+                    transaction.setAmount(listing.getPrice());
                     transactionService.addTransaction(transaction);
 
                     listing.setStatus(Status.SOLD);
@@ -276,22 +280,33 @@ public class PaymentController {
         String idUser = queryParams.get("idUser");
         String price = queryParams.get("vnp_Amount");
         String transactionId = queryParams.get("vnp_TransactionNo");
-        String email = userService.getCurrentUserEmail();
 
             if("00".equals(vnp_ResponseCode)) {
                 //transaction finish
                 //update database
                 try {
                     // Get object User and Listing from database
-                    Optional<User> userOptional = userService.findByEmail(email);
+                    Optional<User> userOptional = userService.findById(Long.parseLong(idUser));
 
                     if (!userOptional.isPresent()) {
                         response.sendError(HttpServletResponse.SC_NOT_FOUND, "User not found");
                         return;
                     }
-                    User user = userOptional.get();
+                    User admin = userService.findByEmail("arty16@gmail.com")
+                            .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
 
-                    response.sendRedirect("http://localhost:5173/congratulation");
+                    User user = userOptional.get();
+                    Transaction transaction = new Transaction();
+                    transaction.setSender(user); // seller (user)
+                    transaction.setReceiver(admin); // Admin get money
+                    transaction.setTransactionDate(new Date());
+                    transaction.setTransactionType(TransactionType.DEPOSIT);
+                    transaction.setAmount(Long.parseLong(price));
+                    transactionService.addTransaction(transaction);
+
+                    user.setMoney(user.getMoney() + Long.parseLong(price));
+                    userService.createUser(user);
+                    response.sendRedirect("http://localhost:5173/");
                 } catch (Exception e) {
                     e.printStackTrace();
                     response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to process the transaction");
@@ -303,9 +318,11 @@ public class PaymentController {
             }
         }
 
-
     @GetMapping("/deposit")
-    public String getDeposit(@PathParam("price") long price, @PathParam("idUser") Integer idUser) throws UnsupportedEncodingException{
+    public String getDeposit(@PathParam("price") long price) throws UnsupportedEncodingException{
+        String email = userService.getCurrentUserEmail();
+        Optional<User> user = userService.findByEmail(email);
+
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String orderType = "other";
@@ -330,7 +347,7 @@ public class PaymentController {
         vnp_Params.put("vnp_OrderType", orderType);
 
         vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", Config.vnp_ReturnUrlDeposit+"?idUser="+idUser); // ? add id listing
+        vnp_Params.put("vnp_ReturnUrl", Config.vnp_ReturnUrlDeposit+"?idUser="+user.get().getId()); // ? add id listing
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));

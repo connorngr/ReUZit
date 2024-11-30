@@ -35,7 +35,7 @@ public class ListingController {
 
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
-        List<Listing> listings = listingService.getAllListings();
+        List<Listing> listings = listingService.getAllActiveListings();
         return ResponseEntity.ok(listings);
     }
 
