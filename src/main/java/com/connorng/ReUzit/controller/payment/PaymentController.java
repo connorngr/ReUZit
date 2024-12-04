@@ -70,11 +70,9 @@ public class PaymentController {
     }
 
     @PostMapping("/createCodOrder")
-    public ResponseEntity<Order> createCodOrder(
+    public ResponseEntity<?> createCodOrder(
             @RequestParam Long idListing, @RequestParam Long idAddress) {
-
-        System.out.println(idAddress+"+"+ idListing);
-
+try{
         String authenticatedEmail = userService.getCurrentUserEmail();
         // Lấy thông tin người dùng từ email đã xác thực
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
@@ -116,19 +114,27 @@ public class PaymentController {
         // Tạo và lưu Transaction cho COD
         Transaction transaction = new Transaction();
         transaction.setPayment(savedPayment);
-        transaction.setSender(user);  // Người mua
-        transaction.setReceiver(listing.getUser());  // Người bán (admin)
+        transaction.setSender(listing.getUser());
+        transaction.setReceiver(user);
         transaction.setTransactionDate(new Date());
         transaction.setTransactionType(TransactionType.PRODUCT_SALE);
         transaction.setAmount(listing.getPrice());
         transactionService.addTransaction(transaction);
 
         // Cập nhật trạng thái sản phẩm thành ACTIVE
-        listing.setStatus(Status.ACTIVE);  // Trạng thái sản phẩm là ACTIVE
+        listing.setStatus(Status.PENDING);  // Trạng thái sản phẩm là ACTIVE
         listingService.saveListing(listing);
 
         // Trả về kết quả thành công
         return ResponseEntity.status(HttpStatus.CREATED).body(savedOrder);
+    } catch (Exception ex) {
+        // Log the error for debugging purposes
+        ex.printStackTrace();
+
+        // Trả về lỗi
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("An error occurred while creating the COD order: " + ex.getMessage());
+    }
     }
 
     @GetMapping("/paymentCallback")
@@ -182,15 +188,15 @@ public class PaymentController {
 
                     // **Create and save Transaction**
                     Transaction transaction = new Transaction();
-                    transaction.setPayment(savedPayment); // Link with payment
-                    transaction.setSender(user); // seller (user)
-                    transaction.setReceiver(listing.getUser()); // Admin get money
+                    transaction.setPayment(savedPayment);
+                    transaction.setSender(listing.getUser());
+                    transaction.setReceiver(user);
                     transaction.setTransactionDate(new Date());
                     transaction.setTransactionType(TransactionType.PRODUCT_SALE);
                     transaction.setAmount(listing.getPrice());
                     transactionService.addTransaction(transaction);
 
-                    listing.setStatus(Status.SOLD);
+                    listing.setStatus(Status.PENDING);
                     listingService.saveListing(listing);
                 response.sendRedirect("http://localhost:5173/order");
                 } catch (Exception e) {
@@ -206,7 +212,10 @@ public class PaymentController {
     }
 
     @GetMapping("/pay")
-        public String getPay(@PathParam("price") long price, @PathParam("idListing") Integer idListing, @PathParam("idAddress") Integer idAddress, @PathParam("idUser") Integer idUser) throws UnsupportedEncodingException{
+        public String getPay(@PathParam("price") long price, @PathParam("idListing") Integer idListing, @PathParam("idAddress") Integer idAddress) throws UnsupportedEncodingException{
+        String email = userService.getCurrentUserEmail();
+        Optional<User> user = userService.findByEmail(email);
+
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String orderType = "other";
@@ -231,7 +240,7 @@ public class PaymentController {
         vnp_Params.put("vnp_OrderType", orderType);
 
         vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", Config.vnp_ReturnUrl+"?idListing="+idListing+"&idUser="+idUser+ "&idAddress=" + idAddress); // ? add id listing
+        vnp_Params.put("vnp_ReturnUrl", Config.vnp_ReturnUrl+"?idListing="+idListing+"&idUser="+user.get().getId()+ "&idAddress=" + idAddress); // ? add id listing
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));

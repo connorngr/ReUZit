@@ -35,7 +35,13 @@ public class ListingController {
 
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
-        List<Listing> listings = listingService.getAllActiveListings();
+        List<Listing> listings = listingService.getAllListings();
+        return ResponseEntity.ok(listings);
+    }
+    @GetMapping("/active")
+    public ResponseEntity<List<Listing>> getAllActiveListings() {
+        String email = userService.getCurrentUserEmail();
+        List<Listing> listings = listingService.getAllActiveListings(email);
         return ResponseEntity.ok(listings);
     }
 

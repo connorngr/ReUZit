@@ -70,7 +70,7 @@ public class AddressService {
         }
     }
 
-    // Xoá địa chỉ
+    // Xoá địa chỉ (Soft delete)
     public void deleteAddress(Long id, String authenticatedEmail) {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         if (!userOptional.isPresent()) {
@@ -87,7 +87,8 @@ public class AddressService {
                 throw new SecurityException("You are not authorized to delete this address.");
             }
 
-            addressRepository.deleteById(id);
+            address.setDelete(true); // Mark as deleted
+            addressRepository.save(address); // Save updated entity
         } else {
             throw new RuntimeException("Address not found with id " + id);
         }
@@ -113,7 +114,7 @@ public class AddressService {
 
     // Lấy danh sách địa chỉ theo userId
     public List<Address> getAddressesByUserId(Long userId) {
-        return addressRepository.findByUserId(userId);
+        return addressRepository.findByUserIdAndNotDeleted(userId);
     }
 
     // Lấy tất cả địa chỉ của user theo authenticatedEmail

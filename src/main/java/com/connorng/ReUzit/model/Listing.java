@@ -22,7 +22,6 @@ public class Listing {
     private Long id;
 
     @ManyToOne
-    @JsonBackReference
     @JoinColumn(name = "user_id", nullable = false)
     private User user;  // Assuming User entity already exists
 

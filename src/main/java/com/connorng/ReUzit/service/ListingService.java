@@ -34,8 +34,8 @@ public class ListingService {
         return listingRepository.findAll();
     }
 
-    public List<Listing> getAllActiveListings() {
-        return listingRepository.findByStatus("ACTIVE");
+    public List<Listing> getAllActiveListings(String authenticatedEmail) {
+        return listingRepository.findByStatusAndNotUserEmail(Status.ACTIVE, authenticatedEmail);
     }
 
     public Listing findById(Long id) {

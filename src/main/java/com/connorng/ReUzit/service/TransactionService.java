@@ -20,11 +20,11 @@ public class TransactionService{
     }
 
     public List<Transaction> getAllOrdersBySellerEmail(String email) {
-        return transactionRepository.findAllByReceiver_Email(email);
+        return transactionRepository.findAllBySender_Email(email);
     }
 
     public List<Transaction> getAllOrdersByBuyerEmail(String email) {
-        return transactionRepository.findAllBySender_Email(email);
+        return transactionRepository.findAllByReceiver_Email(email);
     }
 
     // Add the new findById method

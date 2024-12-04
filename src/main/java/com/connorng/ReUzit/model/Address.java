@@ -52,4 +52,7 @@ public class Address {
 
     @Column(name = "is_default", nullable = false)
     private boolean isDefault = false; // Đánh dấu địa chỉ mặc định
+
+    @Column(name = "is_delete", nullable = false)
+    private boolean isDelete = false;
 }
