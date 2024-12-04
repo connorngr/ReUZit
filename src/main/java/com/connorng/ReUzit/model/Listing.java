@@ -2,6 +2,7 @@ package com.connorng.ReUzit.model;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -32,21 +33,19 @@ public class Listing {
     private String description;
 
     @Column(nullable = false)
-    private Double price;
+    private Long price;
 
     @ManyToOne
-    @JsonBackReference
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @Transient // Chỉ dùng cho mục đích truyền thông tin, không lưu vào DB
-    private Long categoryId;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Condition condition;
 
     @Column(nullable = false)
-    private String condition;
-
-    @Column(nullable = false)
-    private String status;  // e.g., active, sold, removed
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL)
     @JsonManagedReference

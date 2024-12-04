@@ -1,6 +1,7 @@
 package com.connorng.ReUzit.controller.payment;
 
 import com.connorng.ReUzit.model.Order;
+import com.connorng.ReUzit.model.Status;
 import com.connorng.ReUzit.service.OrderService;
 import com.connorng.ReUzit.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +22,8 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<Order> updateOrderStatus(@PathVariable Long id, @RequestParam Order.OrderStatus status) {
-        Order updatedOrder = orderService.updateOrderStatus(id, status);
+    public ResponseEntity<Order> updateOrderStatus(@PathVariable Long id, @RequestParam Status status, @RequestParam Long transactionId) {
+        Order updatedOrder = orderService.updateOrderStatus(id, status, transactionId);
         return ResponseEntity.ok(updatedOrder);
     }
 

@@ -1,6 +1,7 @@
 package com.connorng.ReUzit.controller.listing;
 
 
+import com.connorng.ReUzit.dto.ListingDTO;
 import com.connorng.ReUzit.model.Listing;
 import com.connorng.ReUzit.service.ListingService;
 import com.connorng.ReUzit.service.UserService;
@@ -24,26 +25,21 @@ import java.util.stream.Collectors;
 public class ListingController {
     @Autowired
     private ListingService listingService;
+
     @Autowired
     private UserService userService;
+
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
         List<Listing> listings = listingService.getAllListings();
-
-        listings.forEach(listing -> {
-            listing.setCategoryId(listing.getCategory() != null ? listing.getCategory().getId() : null);
-        });
         return ResponseEntity.ok(listings);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
-        Optional<Listing> listing = listingService.getListingById(id);
-
+    public ResponseEntity<ListingDTO> getListingById(@PathVariable Long id) {
+        Optional<ListingDTO> listing = listingService.getListingById(id);
         if (listing.isPresent()) {
-            Listing result = listing.get();
-            result.setCategoryId(result.getCategory() != null ? result.getCategory().getId() : null);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(listing.get());
         } else {
             return ResponseEntity.notFound().build();  // Returns 404 Not Found if listing not found
         }
@@ -56,10 +52,6 @@ public class ListingController {
 
         List<Listing> listings = listingService.getListingsByUserEmail(email);
 
-        listings.forEach(listing -> {
-            listing.setCategoryId(listing.getCategory() != null ? listing.getCategory().getId() : null);
-        });
-
         if (listings.isEmpty()) {
             return ResponseEntity.noContent().build();  // Returns 204 No Content if no listings found
         }
@@ -69,24 +61,23 @@ public class ListingController {
     private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
 
     @PostMapping
-    public ResponseEntity<Listing> createListing(@ModelAttribute ListingRequest listing) throws IOException {
+    public ResponseEntity<ListingDTO> createListing(@ModelAttribute ListingRequest listing) throws IOException {
         // Get the current authenticated user
         String email = userService.getCurrentUserEmail();
 
         // Call the service to handle the listing creation
-        Listing createdListing = listingService.createListing(listing, email);
+        ListingDTO createdListing = listingService.createListing(listing, email);
         return ResponseEntity.ok(createdListing);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Listing> updateListing(@PathVariable Long id,
-                                                 @ModelAttribute ListingRequest listing) throws IOException {
+                                                 @ModelAttribute ListingUpdateRequest listing) throws IOException {
         // Get the current authenticated user's email
         String email = userService.getCurrentUserEmail();
 
         // Delegate the update process to the service layer
         Listing updatedListing = listingService.updateListing(id, listing, email);
-        updatedListing.setCategoryId(updatedListing.getCategory() != null ? updatedListing.getCategory().getId() : null);
         return ResponseEntity.ok(updatedListing);
     }
 
@@ -104,22 +95,5 @@ public class ListingController {
             return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).build();
         }
     }
-    // service AWS
-    @PostMapping(
-            value = "{id}/listing-image",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public void uploadListingImage(
-            @PathVariable("id") Long id,
-            @RequestParam("files")List<MultipartFile> files
-            ){
-        listingService.uploadListingImage(files, id);
-    }
 
-    @GetMapping("{id}/listing-image")
-    public List<byte[]> getListingImage(
-            @PathVariable("id") Long id
-    ){
-        return listingService.getListingImages(id);
-    }
 }
