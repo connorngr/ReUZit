@@ -49,6 +49,7 @@ public class AuthenticationService {
             // Handle the error (e.g., throw an exception or return an error response)
             throw new IllegalArgumentException("Email is already registered.");
         }
+
         String imageUrlPath = null;
         if (imageUrl != null && !imageUrl.isEmpty()) {
             imageUrlPath = fileStorageService.saveFileToStorage(imageUrl);

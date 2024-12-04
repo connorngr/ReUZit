@@ -3,7 +3,11 @@ package com.connorng.ReUzit.service;
 import com.connorng.ReUzit.controller.listing.ListingRequest;
 import com.connorng.ReUzit.controller.listing.ListingUpdateRequest;
 import com.connorng.ReUzit.model.*;
+import com.connorng.ReUzit.controller.listing.ListingUpdateRequest;
+import com.connorng.ReUzit.dto.ListingDTO;
+import com.connorng.ReUzit.model.*;
 import com.connorng.ReUzit.repository.ListingRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,16 +18,16 @@ import java.util.ArrayList;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 //Add admin the permission later
 @Service
 public class ListingService {
     @Autowired
     private ListingRepository listingRepository;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private CategoryService categoryService;
 
@@ -42,8 +46,10 @@ public class ListingService {
         return listingRepository.findById(id).orElse(null);
     }
 
-    public Optional<Listing> getListingById(Long listingId) {
-        return listingRepository.findById(listingId);
+    public Optional<ListingDTO> getListingById(Long listingId) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new EntityNotFoundException("Listing not found with id: " + listingId));
+        return Optional.of(convertToDTO(listing));
     }
 
     public List<Listing> getListingsByUserEmail(String userEmail) {
@@ -59,7 +65,8 @@ public class ListingService {
         return listingRepository.save(listing);
     }
 
-    public Listing createListing(ListingRequest listing, String authenticatedEmail) throws IOException {
+
+    public ListingDTO createListing(ListingRequest listing, String authenticatedEmail) throws IOException {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         if (!userOptional.isPresent()) {
             throw new IllegalArgumentException("User not found.");
@@ -93,7 +100,8 @@ public class ListingService {
             images.add(image);
         }
         new_listing.setImages(images);
-        return listingRepository.save(new_listing);
+        Listing savedListing = listingRepository.save(new_listing);
+        return convertToDTO(savedListing);
     }
 
     public Listing updateListing(Long listingId, ListingUpdateRequest listingUpdateRequest, String authenticatedEmail) throws IOException {
@@ -185,5 +193,22 @@ public class ListingService {
         return listingOptional;
     }
 
+    private ListingDTO convertToDTO(Listing listing) {
+        ListingDTO dto = new ListingDTO();
+        dto.setId(listing.getId());
+        dto.setUserId(listing.getUser().getId());
+        dto.setUsername(listing.getUser().getUsername());
+        dto.setTitle(listing.getTitle());
+        dto.setDescription(listing.getDescription());
+        dto.setPrice(Double.valueOf(listing.getPrice()));
+        dto.setCategoryId(listing.getCategory().getId());
+        dto.setCategoryName(listing.getCategory().getName());
+        dto.setCondition(String.valueOf(listing.getCondition()));
+        dto.setStatus(String.valueOf(listing.getStatus()));
+        dto.setCreatedAt(listing.getCreatedAt());
+        dto.setUpdatedAt(listing.getUpdatedAt());
+        dto.setImages(listing.getImages());
+        return dto;
+    }
 
 }

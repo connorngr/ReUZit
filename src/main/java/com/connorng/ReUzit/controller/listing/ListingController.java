@@ -1,6 +1,7 @@
 package com.connorng.ReUzit.controller.listing;
 
 
+import com.connorng.ReUzit.dto.ListingDTO;
 import com.connorng.ReUzit.model.Listing;
 import com.connorng.ReUzit.service.ListingService;
 import com.connorng.ReUzit.service.UserService;
@@ -24,10 +25,8 @@ import java.util.stream.Collectors;
 public class ListingController {
     @Autowired
     private ListingService listingService;
-
     @Autowired
     private UserService userService;
-
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
         List<Listing> listings = listingService.getAllListings();
@@ -43,6 +42,8 @@ public class ListingController {
     @GetMapping("/{id}")
     public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
         Optional<Listing> listing = listingService.getListingById(id);
+    public ResponseEntity<ListingDTO> getListingById(@PathVariable Long id) {
+        Optional<ListingDTO> listing = listingService.getListingById(id);
         if (listing.isPresent()) {
             return ResponseEntity.ok(listing.get());
         } else {
@@ -66,12 +67,12 @@ public class ListingController {
     private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
 
     @PostMapping
-    public ResponseEntity<Listing> createListing(@ModelAttribute ListingRequest listing) throws IOException {
+    public ResponseEntity<ListingDTO> createListing(@ModelAttribute ListingRequest listing) throws IOException {
         // Get the current authenticated user
         String email = userService.getCurrentUserEmail();
 
         // Call the service to handle the listing creation
-        Listing createdListing = listingService.createListing(listing, email);
+        ListingDTO createdListing = listingService.createListing(listing, email);
         return ResponseEntity.ok(createdListing);
     }
 

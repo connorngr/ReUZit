@@ -15,8 +15,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
 
 
 @Configuration
@@ -24,9 +26,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class ApplicationConfig implements WebMvcConfigurer {
     @Autowired
     private UserService userService;
+
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> userService.findByEmail(username)
+        return username -> userService.findByNameOrEmail(username, username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
     @Bean
@@ -51,6 +54,16 @@ public class ApplicationConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:src/main/resources/static/uploads/")
                 .setCacheControl(CacheControl.noCache().cachePrivate());
+        registry.addResourceHandler("/uploadFiles/**")
+                .addResourceLocations("file:uploadFiles/") // Đường dẫn tới thư mục uploads
+                .setCachePeriod(3600)
+                .resourceChain(true)
+                .addResolver(new PathResourceResolver());
+    }
+
+    @Bean
+    public StandardServletMultipartResolver multipartResolver() {
+        return new StandardServletMultipartResolver();
     }
 }
 

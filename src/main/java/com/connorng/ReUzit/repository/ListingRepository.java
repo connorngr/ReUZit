@@ -17,4 +17,5 @@ public interface ListingRepository extends JpaRepository<Listing, Long> {
     List<Listing> findByStatus(Status status);
     @Query("SELECT l FROM Listing l WHERE l.status = :status AND l.user.email != :email")
     List<Listing> findByStatusAndNotUserEmail(@Param("status") Status status, @Param("email") String email);
+    List<Listing> findByUserId(Long userId);
 }

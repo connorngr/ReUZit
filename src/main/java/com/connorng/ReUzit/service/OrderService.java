@@ -1,6 +1,10 @@
 package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.model.*;
+import com.connorng.ReUzit.model.Order;
+import com.connorng.ReUzit.model.Status;
+import com.connorng.ReUzit.model.User;
+import com.connorng.ReUzit.model.Transaction;
 import com.connorng.ReUzit.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
