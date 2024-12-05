@@ -40,8 +40,6 @@ public class ListingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
-        Optional<Listing> listing = listingService.getListingById(id);
     public ResponseEntity<ListingDTO> getListingById(@PathVariable Long id) {
         Optional<ListingDTO> listing = listingService.getListingById(id);
         if (listing.isPresent()) {
