@@ -40,7 +40,6 @@ public class OrderService {
         Optional<Order> orderOptional = orderRepository.findById(orderId);
         if (orderOptional.isPresent()) {
             Order order = orderOptional.get();
-            System.out.println(transactionId);
 
             // Fetch the transaction by transactionId
             Optional<Transaction> transactionOptional = transactionService.findById(transactionId);
@@ -53,16 +52,17 @@ public class OrderService {
             User buyer = transaction.getSender();   // Assuming sender is the buyer
             Long amount = order.getListing().getPrice();
 
+            User admin = userService.findByRole(Roles.ROLE_ADMIN)
+                    .orElseThrow(() -> new IllegalArgumentException("Admin not found with ROLE_ADMIN"));
+
             if (transaction.getPayment().getMethod().name().equals("BANK_TRANSFER")) {
                 // Update based on status
                 if (status == Status.SOLD) {
                     order.setConfirmationDate(new Date());
-                    Long adminFee = (long) (amount * 0.1); // Admin takes a 10% fee
+                    Long adminFee = (long) (amount * 0.01); // Admin takes a 10% fee
                     seller.setMoney(seller.getMoney() + (amount - adminFee));
                     userService.createUser(seller);
 
-                    User admin = userService.findByEmail("arty16@gmail.com")
-                            .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
                     admin.setMoney(admin.getMoney() - (amount - adminFee));
                     userService.createUser(admin);
                 }
@@ -72,8 +72,6 @@ public class OrderService {
                     userService.createUser(buyer);
 
                     // Deduct from admin account
-                    User admin = userService.findByEmail("arty16@gmail.com")
-                            .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
                     admin.setMoney(admin.getMoney() - amount);
                     userService.createUser(admin);
                 }

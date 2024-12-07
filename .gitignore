@@ -49,6 +49,7 @@ src/main/java/com/connorng/ReUzit/s3
 .idea/
 
 /node_modules/
+/uploadFiles/*
 
 .env
 .aws/credentials

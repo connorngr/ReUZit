@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -50,16 +51,22 @@ public class AuthController {
             @RequestBody AuthenticationRequest request
     ) {
         return ResponseEntity.ok(authenticationService.authenticate(request));
-    };
+    }
+
+    ;
 
     @PostMapping("/google")
     public ResponseEntity<AuthenticationResponse> grantCode(@RequestParam("code") String code) throws Exception {
+        // Step 1: Exchange authorization code for user info
         String userInfo = processGrantCode(code);
 
+        // Step 2: Extract user information from the Google response
         User googleUser = extractUserInfo(userInfo);
-        googleUser.setPassword(defaultPassword);
+        googleUser.setPassword(defaultPassword); // Use a default or random password
 
-        return ResponseEntity.ok(authenticationService.googleAuth(googleUser));
+        // Step 3: Handle login or registration
+        AuthenticationResponse response = authenticationService.googleAuth(googleUser);
+        return ResponseEntity.ok(response);
     }
 
     private String processGrantCode(String code) throws JsonProcessingException, JsonProcessingException {
@@ -77,22 +84,18 @@ public class AuthController {
         httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(params, httpHeaders);
 
-        String tokenUrl = "https://oauth2.googleapis.com/token";
+        try {
+            String tokenUrl = "https://oauth2.googleapis.com/token";
+            ResponseEntity<String> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, entity, String.class);
 
-        // Send POST request to exchange authorization code for an access token
-        ResponseEntity<String> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, entity, String.class);
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(response.getBody());
+            return getUserInfo(rootNode.path("access_token").asText());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to exchange authorization code for access token", e);
+        }
+    }
 
-        // Extract the access token from the response (JSON format)
-        String responseBody = response.getBody();
-
-        // You can use a library like Jackson to parse the JSON and extract the token
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(responseBody);
-        String accessToken = rootNode.path("access_token").asText();
-
-        // Use the access token to get user info
-        return getUserInfo(accessToken);
-    };
     private String getUserInfo(String accessToken) {
         // Prepare the request to get user info
         String userInfoUrl = "https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + accessToken;
@@ -114,16 +117,11 @@ public class AuthController {
         // Parse the JSON string returned by Google
         JsonNode userJson = objectMapper.readTree(userInfo);
 
-        // Create a new User object and populate its fields
-        User user = new User();
-        user.setEmail(userJson.get("email").asText());
-        user.setFirstName(userJson.get("family_name").asText());
-        user.setLastName(userJson.get("given_name").asText());
-        user.setImageUrl(userJson.get("picture").asText());
-
-        // Optionally set default or random password if needed (for first-time registration)
-        user.setPassword("defaultPassword"); // Or generate a random password
-
-        return user;
+        return User.builder()
+                .email(userJson.get("email").asText())
+                .firstName(userJson.get("family_name").asText())
+                .lastName(userJson.get("given_name").asText())
+                .imageUrl(userJson.get("picture").asText())
+                .build();
     }
 }

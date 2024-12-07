@@ -40,10 +40,12 @@ public class SecurityConfig {
                                 .authenticated()
                                 .requestMatchers("/api/auth/**", "**")
                                 .permitAll()
+
                                 .anyRequest()
                                 .authenticated()
 
                 )
+
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

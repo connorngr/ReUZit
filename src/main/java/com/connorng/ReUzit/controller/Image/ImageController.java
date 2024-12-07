@@ -36,4 +36,12 @@ public class ImageController {
         List<Image> images = imageService.getAllImagesByListingId(listingId);
         return ResponseEntity.ok(images);
     }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Image> updateImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        Image updatedImage = imageService.updateImage(id, file);
+        return ResponseEntity.ok(updatedImage);
+    }
 }

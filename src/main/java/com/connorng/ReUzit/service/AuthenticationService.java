@@ -63,6 +63,7 @@ public class AuthenticationService {
                 .imageUrl(imageUrlPath)
                 .money(0L)
                 .addresses(new ArrayList<>())
+                .bio(null)
                 .build();
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
@@ -80,7 +81,6 @@ public class AuthenticationService {
         );
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow();
-//        System.out.println(user);
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
@@ -88,16 +88,27 @@ public class AuthenticationService {
     };
 
     public AuthenticationResponse googleAuth(User googleUser) {
-        if(checkExist(googleUser.getEmail())) {
-//            RegisterRequest registerRequest = new RegisterRequest(
-//                    googleUser.getFirstName(),
-//                    googleUser.getLastName(),
-//                    googleUser.getEmail(),
-//                    googleUser.getPassword()
-////                    googleUser.getImageUrl()
-//            );
-//            return register(registerRequest);
+        if (!checkExist(googleUser.getEmail())) {
+            User user = User.builder()
+                    .firstName(googleUser.getFirstName())
+                    .lastName(googleUser.getLastName())
+                    .email(googleUser.getEmail())
+                    .password(passwordEncoder.encode(googleUser.getPassword())) // Use a generated password or secure default
+                    .role(Roles.ROLE_USER)
+                    .imageUrl(googleUser.getImageUrl())
+                    .money(0L)
+                    .addresses(new ArrayList<>())
+                    .build();
+            userRepository.save(user);
+
+            String jwtToken = jwtService.generateToken(user);
+            System.out.println("Token received: " + jwtToken);
+            return AuthenticationResponse.builder()
+                    .token(jwtToken)
+                    .build();
         }
+
+        // Authenticate existing user
         AuthenticationRequest authenticationRequest = new AuthenticationRequest(
                 googleUser.getEmail(),
                 googleUser.getPassword()

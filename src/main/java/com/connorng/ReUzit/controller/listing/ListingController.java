@@ -39,6 +39,12 @@ public class ListingController {
         return ResponseEntity.ok(listings);
     }
 
+    @GetMapping("/category/{categoryId}/active")
+    public ResponseEntity<List<Listing>> getActiveListingsByCategoryId(@PathVariable Long categoryId) {
+        List<Listing> listings = listingService.getListingsByCategoryIdAndActiveStatus(categoryId);
+        return ResponseEntity.ok(listings);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ListingDTO> getListingById(@PathVariable Long id) {
         Optional<ListingDTO> listing = listingService.getListingById(id);
@@ -48,6 +54,8 @@ public class ListingController {
             return ResponseEntity.notFound().build();  // Returns 404 Not Found if listing not found
         }
     }
+
+    
 
     @GetMapping("/me")
     public ResponseEntity<List<Listing>> getCurrentUserListings() {

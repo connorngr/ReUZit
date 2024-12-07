@@ -12,8 +12,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -55,6 +58,37 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUserInfo(@RequestBody UserUpdateRequest request) {
+        String email = userService.getCurrentUserEmail();
+        Optional<User> optionalUser = userService.findByEmail(email);
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        User user = optionalUser.get();
+
+        // Update user information
+        User updatedUser = userService.updateUserInfo(
+                user.getId(),
+                request.getFirstName(),
+                request.getLastName(),
+                request.getBio()
+        );
+
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PutMapping("/image")
+    public ResponseEntity<User> updateUserImage(
+            @RequestParam("image") MultipartFile file) throws IOException {
+        String email = userService.getCurrentUserEmail();
+
+        User updatedUser = userService.updateUserImage(email, file);
+        return ResponseEntity.ok(updatedUser);
     }
 
 }

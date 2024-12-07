@@ -66,6 +66,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Long money = 0L;
 
+    @Column(nullable = true)
+    private String bio;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name())); //only one role

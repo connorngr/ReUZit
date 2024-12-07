@@ -42,6 +42,10 @@ public class ListingService {
         return listingRepository.findByStatusAndNotUserEmail(Status.ACTIVE, authenticatedEmail);
     }
 
+    public List<Listing> getListingsByCategoryIdAndActiveStatus(Long categoryId) {
+        return listingRepository.findByCategoryIdAndStatus(categoryId, Status.ACTIVE);
+    }
+
     public Listing findById(Long id) {
         return listingRepository.findById(id).orElse(null);
     }
