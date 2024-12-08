@@ -57,6 +57,10 @@ public class Listing {
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private java.util.Date updatedAt;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     //Created in db for the first time
     @PrePersist
     protected void onCreate() {

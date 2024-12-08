@@ -25,6 +25,9 @@ public class OrderService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private EmailSenderService emailSenderService;
+
     public Order createOrder(Order order) {
         order.setOrderDate(new Date());
         // setConfirmationDate
@@ -48,12 +51,15 @@ public class OrderService {
             }
 
             Transaction transaction = transactionOptional.get();
-            User seller = transaction.getReceiver(); // Assuming receiver is the seller
-            User buyer = transaction.getSender();   // Assuming sender is the buyer
+            User seller = transaction.getSender(); // Assuming receiver is the seller
+            User buyer = transaction.getReceiver();   // Assuming sender is the buyer
             Long amount = order.getListing().getPrice();
 
             User admin = userService.findByRole(Roles.ROLE_ADMIN)
                     .orElseThrow(() -> new IllegalArgumentException("Admin not found with ROLE_ADMIN"));
+
+            String emailSubject;
+            String emailBody;
 
             if (transaction.getPayment().getMethod().name().equals("BANK_TRANSFER")) {
                 // Update based on status
@@ -65,6 +71,20 @@ public class OrderService {
 
                     admin.setMoney(admin.getMoney() - (amount - adminFee));
                     userService.createUser(admin);
+                    // Send email to seller
+                    emailSubject = "Xác nhận bán hàng thành công!";
+                    emailBody = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Sản phẩm \"%s\" đã được bán thành công với giá %d VND.\n" +
+                                    "Số tiền sau phí đã được cộng vào tài khoản của bạn: %d VND.\n\n" +
+                                    "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!\n\n" +
+                                    "Trân trọng,\nĐội ngũ ReUzit",
+                            seller.getLastName(),
+                            order.getListing().getTitle(),
+                            amount,
+                            amount - adminFee
+                    );
+                    emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
                 }
                 if (status == Status.INACTIVE) {
                     // Refund amount from admin to buyer
@@ -74,14 +94,44 @@ public class OrderService {
                     // Deduct from admin account
                     admin.setMoney(admin.getMoney() - amount);
                     userService.createUser(admin);
+                    // Send email to seller about cancellation
+                    emailSubject = "Đơn hàng đã bị hủy";
+                    emailBody = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Đơn hàng của sản phẩm \"%s\" đã bị hủy.\n\n" +
+                                    "Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi.\n\n" +
+                                    "Trân trọng,\nĐội ngũ ReUzit",
+                            seller.getLastName(),
+                            order.getListing().getTitle()
+                    );
+                    emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
                 }
             }
             if (transaction.getPayment().getMethod().name().equals("COD")) {
                 if (status == Status.SOLD) {
                     transaction.getPayment().setStatus(Payment.PaymentStatus.SUCCESS);
+                    emailSubject = "Xác nhận giao hàng COD thành công!";
+                    emailBody = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Sản phẩm \"%s\" đã được giao thành công.\n\n" +
+                                    "Hãy kiểm tra thông tin giao dịch trong hệ thống.\n\n" +
+                                    "Trân trọng,\nĐội ngũ ReUzit",
+                            seller.getLastName(),
+                            order.getListing().getTitle()
+                    );
+                    emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
                 }
                 if (status == Status.INACTIVE) {
-                    transaction.getPayment().setStatus(Payment.PaymentStatus.FAILED);
+                    emailSubject = "Giao hàng COD thất bại";
+                    emailBody = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Đơn hàng của sản phẩm \"%s\" không thành công.\n\n" +
+                                    "Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi.\n\n" +
+                                    "Trân trọng,\nĐội ngũ ReUzit",
+                            seller.getLastName(),
+                            order.getListing().getTitle()
+                    );
+                    emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
                 }
                 transactionService.addTransaction(transaction);
             }
@@ -93,5 +143,24 @@ public class OrderService {
 
     public List<Order> getOrdersByUserEmail(String email) {
         return orderRepository.findByUser_Email(email);
+    }
+
+    private void sendStatusChangeEmail(User seller, Order order, Status status) {
+        String sellerEmail = seller.getEmail();
+        String subject = "Cập nhật trạng thái đơn hàng trên ReUzit";
+
+        String body = String.format(
+                "Xin chào %s,\n\n" +
+                        "Trạng thái của đơn hàng cho sản phẩm \"%s\" đã được cập nhật.\n" +
+                        "Trạng thái mới: %s\n\n" +
+                        "Số tiền bạn nhận được (nếu có): %d VND\n\n" +
+                        "Cảm ơn bạn đã sử dụng ReUzit!",
+                seller.getLastName(),
+                order.getListing().getTitle(),
+                status.name(),
+                (status == Status.SOLD ? (long) (order.getListing().getPrice() * 0.9) : 0) // Deduct admin fee for SOLD status
+        );
+
+        emailSenderService.sendEmail(sellerEmail, subject, body);
     }
 }

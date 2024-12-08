@@ -15,8 +15,19 @@ import java.util.Optional;
 public interface ListingRepository extends JpaRepository<Listing, Long> {
     List<Listing> findByUser(Optional<User> user);
     List<Listing> findByStatus(Status status);
-    @Query("SELECT l FROM Listing l WHERE l.status = :status AND l.user.email != :email")
-    List<Listing> findByStatusAndNotUserEmail(@Param("status") Status status, @Param("email") String email);
+
     List<Listing> findByUserId(Long userId);
-    List<Listing> findByCategoryIdAndStatus(Long categoryId, Status status);
+
+    @Query("SELECT l FROM Listing l WHERE l.isDeleted = false AND l.category.id = :categoryId AND l.status = :status")
+    List<Listing> findByCategoryIdAndStatus(@Param("categoryId") Long categoryId, @Param("status") Status status);
+
+    @Query("SELECT l FROM Listing l WHERE l.isDeleted = false AND l.status = :status AND l.user.email != :email")
+    List<Listing> findActiveListingsByStatusAndNotUserEmail(@Param("status") Status status, @Param("email") String email);
+
+    @Query("SELECT l FROM Listing l WHERE l.id = :id AND l.isDeleted = false")
+    Optional<Listing> findActiveListingById(@Param("id") Long id);
+
+    @Query("SELECT l FROM Listing l WHERE l.isDeleted = false AND l.user.id = :userId")
+    List<Listing> findAllByUserIdAndNotDeleted(@Param("userId") Long userId);
+
 }

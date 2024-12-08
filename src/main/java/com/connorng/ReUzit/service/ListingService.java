@@ -39,11 +39,19 @@ public class ListingService {
     }
 
     public List<Listing> getAllActiveListings(String authenticatedEmail) {
-        return listingRepository.findByStatusAndNotUserEmail(Status.ACTIVE, authenticatedEmail);
+        return listingRepository.findActiveListingsByStatusAndNotUserEmail(Status.ACTIVE, authenticatedEmail);
     }
 
     public List<Listing> getListingsByCategoryIdAndActiveStatus(Long categoryId) {
         return listingRepository.findByCategoryIdAndStatus(categoryId, Status.ACTIVE);
+    }
+
+    public List<Listing> getAllListingsByUser(String email) {
+        Optional<User> userOptional = userService.findByEmail(email);
+        if (!userOptional.isPresent()) {
+            throw new IllegalArgumentException("User not found.");
+        }
+        return listingRepository.findAllByUserIdAndNotDeleted(userOptional.get().getId());
     }
 
     public Listing findById(Long id) {
@@ -158,37 +166,34 @@ public class ListingService {
     }
 
     public List<Long> deleteListings(List<Long> ids, String authenticatedEmail) {
-        // Get information user login
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         User authenticatedUser = userOptional.orElseThrow(() -> new IllegalArgumentException("User not found"));
-        // List don't delete
+
         List<Long> failedDeletions = new ArrayList<>();
-        // Is Admin
         boolean isAdmin = authenticatedUser.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
 
         for (Long listingId : ids) {
             try {
-                // Check listing
                 Optional<Listing> listingOptional = checkIfListingExists(listingId);
                 Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing with ID " + listingId + " not found"));
 
-                // own listing ?
                 if (!isAdmin && !listing.getUser().getId().equals(authenticatedUser.getId())) {
                     throw new SecurityException("You are not authorized to delete listing with ID " + listingId);
                 }
 
-                // Delete listing database
-                listingRepository.deleteById(listingId);
+                // Perform soft delete by setting isDeleted flag
+                listing.setDeleted(true);
+                listingRepository.save(listing);
 
             } catch (Exception e) {
-                // if error print information idListing
                 failedDeletions.add(listingId);
                 System.out.println("Failed to delete listing with ID " + listingId + ": " + e.getMessage());
             }
         }
-        return failedDeletions; // Return list id don't delete, and null if finish
+        return failedDeletions;
     }
+
     private Optional<Listing> checkIfListingExists(Long listingId) {
         Optional<Listing> listingOptional = listingRepository.findById(listingId);
         if (!listingOptional.isPresent()) {

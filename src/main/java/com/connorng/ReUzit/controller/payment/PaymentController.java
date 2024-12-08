@@ -44,6 +44,9 @@ public class PaymentController {
     @Autowired
     private AddressService addressService;
 
+    @Autowired
+    private EmailSenderService emailSenderService;
+
     @PostMapping
     public ResponseEntity<Payment> addPayment(@RequestBody Payment payment) {
         Payment createdPayment = paymentService.addPayment(payment);
@@ -125,6 +128,30 @@ try{
         listing.setStatus(Status.PENDING);  // Trạng thái sản phẩm là ACTIVE
         listingService.saveListing(listing);
 
+    String addressString = "";
+    if (address != null) {
+        addressString = address.getStreet() + ", " + address.getWard() + ", " + address.getDistrict() + ", " + address.getProvince();
+    }
+    String sellerEmail = listing.getUser().getEmail();
+    String subject = "Đơn hàng mới cho sản phẩm của bạn!";
+    String body = String.format(
+            "Xin chào %s,\n\n" +
+                    "Bạn vừa nhận được một đơn hàng cho sản phẩm '\"%s\"' \n" +
+                    "Phương thức thanh toán COD.\n\n" +
+                    "Người mua: %s\n" +
+                    "Email người mua: %s\n" +
+                    "Địa chỉ giao hàng: %s\n\n" +
+                    "Vui lòng kiểm tra và chuẩn bị giao hàng.\n\n" +
+                    "Cảm ơn!",
+            listing.getUser().getLastName(),
+            listing.getTitle(),
+            user.getLastName(),
+            user.getEmail(),
+            addressString
+    );
+
+    emailSenderService.sendEmail(sellerEmail, subject, body);
+
         // Trả về kết quả thành công
         return ResponseEntity.status(HttpStatus.CREATED).body(savedOrder);
     } catch (Exception ex) {
@@ -165,6 +192,8 @@ try{
                         response.sendError(HttpServletResponse.SC_NOT_FOUND, "User or Listing not found");
                         return;
                     }
+                    long adjustedPrice = Long.parseLong(price) / 100;
+
                     User user = userOptional.get();
 
                     // Create object order
@@ -172,7 +201,7 @@ try{
                     order.setShippingAddress(address);
                     order.setUser(user);
                     order.setListing(listing);
-                    order.getListing().setPrice(Long.parseLong(price) / 100); // Value api usually return * 100
+                    order.getListing().setPrice(adjustedPrice); // Value api usually return * 100
                     Order savedOrder = orderService.createOrder(order);
                     // Create and save a new Payment record
                     Payment payment = new Payment();
@@ -198,6 +227,30 @@ try{
 
                     listing.setStatus(Status.PENDING);
                     listingService.saveListing(listing);
+
+                    String addressString = "";
+                    if (address != null) {
+                        addressString = address.getStreet() + ", " + address.getWard() + ", " + address.getDistrict() + ", " + address.getProvince();
+                    }
+                    String sellerEmail = listing.getUser().getEmail();
+                    String subject = "Đơn hàng mới cho sản phẩm của bạn!";
+                    String body = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Bạn vừa nhận được một đơn hàng cho sản phẩm '\"%s\"' \n" +
+                                    "Phương thức thanh toán BANK_TRANSFER.\n\n" +
+                                    "Người mua: %s\n" +
+                                    "Email người mua: %s\n" +
+                                    "Địa chỉ giao hàng: %s\n\n" +
+                                    "Vui lòng kiểm tra và chuẩn bị giao hàng.\n\n" +
+                                    "Cảm ơn!",
+                            listing.getUser().getLastName(),
+                            listing.getTitle(),
+                            user.getLastName(),
+                            user.getEmail(),
+                            addressString
+                    );
+
+                    emailSenderService.sendEmail(sellerEmail, subject, body);
                 response.sendRedirect("http://localhost:5173/order");
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -304,17 +357,33 @@ try{
                     User admin = userService.findByEmail("arty16@gmail.com")
                             .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
 
+                    long adjustedPrice = Long.parseLong(price) / 100;
+
                     User user = userOptional.get();
                     Transaction transaction = new Transaction();
                     transaction.setSender(user); // seller (user)
                     transaction.setReceiver(admin); // Admin get money
                     transaction.setTransactionDate(new Date());
                     transaction.setTransactionType(TransactionType.DEPOSIT);
-                    transaction.setAmount(Long.parseLong(price));
+                    transaction.setAmount(adjustedPrice);
                     transactionService.addTransaction(transaction);
 
                     user.setMoney(user.getMoney() + Long.parseLong(price));
                     userService.createUser(user);
+
+                    String sellerEmail = user.getEmail();
+                    String subject = "Xác nhận nạp tiền vào ReUzit";
+                    String body = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Bạn đã nạp thành công số tiền: %d VND vào tài khoản của mình.\n\n" +
+                                    "Mã giao dịch: %s\n\n" +
+                                    "Cảm ơn bạn đã sử dụng dịch vụ của ReUzit!",
+                            user.getLastName(),
+                            adjustedPrice,
+                            transactionId
+                    );
+
+                    emailSenderService.sendEmail(sellerEmail, subject, body);
                     response.sendRedirect("http://localhost:5173/");
                 } catch (Exception e) {
                     e.printStackTrace();

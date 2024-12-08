@@ -55,14 +55,12 @@ public class ListingController {
         }
     }
 
-    
-
     @GetMapping("/me")
     public ResponseEntity<List<Listing>> getCurrentUserListings() {
         // Get the current logged-in user's authentication
         String email = userService.getCurrentUserEmail();
 
-        List<Listing> listings = listingService.getListingsByUserEmail(email);
+        List<Listing> listings = listingService.getAllListingsByUser(email);
 
         if (listings.isEmpty()) {
             return ResponseEntity.noContent().build();  // Returns 204 No Content if no listings found
@@ -104,7 +102,7 @@ public class ListingController {
         if (failedDeletions.isEmpty()) {
             return ResponseEntity.noContent().build();
         } else {
-            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).build();
+            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(null);
         }
     }
 

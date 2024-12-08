@@ -55,4 +55,9 @@ public class Address {
 
     @Column(name = "is_delete", nullable = false)
     private boolean isDelete = false;
+
+    @Override
+    public String toString() {
+        return getWard() + ", " + getDistrict() + ", " + getProvince();
+    }
 }
