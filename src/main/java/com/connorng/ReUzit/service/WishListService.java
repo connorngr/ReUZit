@@ -24,22 +24,36 @@ public class WishListService {
     private ListingRepository listingRepository;
 
     public WishList addToWishList(String authenticatedEmail, Long listingId) {
-        Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
-        if (!userOptional.isPresent()) {
-            throw new IllegalArgumentException("User not found.");
+        // Fetch the authenticated user.
+        User user = userService.findByEmail(authenticatedEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        // Check if the listing exists.
+        Listing listing = checkIfListingExists(listingId)
+                .orElseThrow(() -> new RuntimeException("Listing not found"));
+
+        // Check if a wishlist entry already exists for the user and listing.
+        Optional<WishList> existingWishList = wishListRepository.findByUserAndListingId(user.getId(), listingId);
+
+        if (existingWishList.isPresent()) {
+            WishList wishList = existingWishList.get();
+            if (wishList.isDelete()) {
+                // Update isDelete to false if the entry was marked as deleted.
+                wishList.setDelete(false);
+                return wishListRepository.save(wishList);
+            } else {
+                // Entry already exists and is active; return it without changes.
+                return wishList;
+            }
         }
-        Optional<Listing> listingOptional = checkIfListingExists(listingId);
-        Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing not found"));
 
-        User user = userOptional.get();
-        Long userId = user.getId();
-
+        // Create a new wishlist entry if it doesn't exist.
         WishList wishList = new WishList();
         wishList.setUser(user);
-        wishList.setListing(listingOptional.get());
-
+        wishList.setListing(listing);
         return wishListRepository.save(wishList);
     }
+
 
     public void deleteWishList(String email, Long wishListId) {
         Optional<User> userOptional = userService.findByEmail(email);
@@ -53,19 +67,19 @@ public class WishListService {
     }
 
     public List<WishList> getAllWishListByUserEmail(String email) {
-        Optional<User> userOptional = userService.findByEmail(email);
-        if (!userOptional.isPresent()) {
-            throw new IllegalArgumentException("User not found.");
-        }
+        User user = userService.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        User user = userOptional.get();
+        // Retrieve only active wishlist entries (isDelete = false).
         return wishListRepository.findAllByUser(user);
     }
+
 
     public boolean isWishListAlready(String email, Long listingId) {
         User user = userService.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
 
+        // Returns true if the listing is actively selected (isDelete = false).
         return wishListRepository.existsByUserAndListingId(user, listingId);
     }
 
@@ -77,26 +91,15 @@ public class WishListService {
         return listingOptional;
     }
 
-    public void deleteWishListByListingId(String email, Long listingId) {
-        // Find and delete SelectedListing by email and listingId
-        WishList wishList = wishListRepository.findByUserEmailAndListingId(email, listingId);
+        public void deleteWishListByListingId(String email, Long listingId) {
+            User currentUser = userService.findByEmail(email)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (wishList != null) {
-            wishListRepository.delete(wishList);
-        } else {
-            throw new IllegalArgumentException("Selected listing not found.");
+            WishList wishList = wishListRepository.findByUserAndListingIdAndDeleteFalse(currentUser.getId(), listingId)
+                    .orElseThrow(() -> new IllegalArgumentException("Wishlist entry not found"));
+
+            wishList.setDelete(true); // Mark the entry as deleted.
+            wishListRepository.save(wishList); // Save the updated entity.
         }
-    }
-
-    public void deleteWishListByUserAndListing(Long userId, Long listingId) {
-        // Find SelectedListing by userId và listingId
-        Optional<WishList> wishListOptional = wishListRepository.findByUserIdAndListingId(userId, listingId);
-
-        if (wishListOptional.isPresent()) {
-            wishListRepository.delete(wishListOptional.get());
-        } else {
-            throw new IllegalArgumentException("Selected listing not found for userId: " + userId + " and listingId: " + listingId);
-        }
-    }
 
 }

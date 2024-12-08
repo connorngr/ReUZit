@@ -28,6 +28,9 @@ public class WishList {
     @Temporal(TemporalType.TIMESTAMP)
     private Date addedDate;
 
+    @Column(name = "is_delete", nullable = false)
+    private boolean isDelete = false;
+
     @PrePersist
     protected void onCreate() {
         this.addedDate = new java.util.Date();
