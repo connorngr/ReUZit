@@ -29,7 +29,7 @@ public class UserController {
     }
     @PostMapping
     public User createUser(@ModelAttribute User user) {
-        return userService.createUser(user);
+        return userService.save(user);
     }
 
     @GetMapping("/me")
@@ -52,9 +52,12 @@ public class UserController {
             @PathVariable Long id,
             @RequestParam Long amount) {
         try {
+            Optional<User> userOptional = userService.findById(id);
             // update money of user
-            User updatedUser = userService.updateMoney(id, amount);
-            return ResponseEntity.ok(updatedUser);
+            User user = userOptional.get();
+            user.setMoney(user.getMoney() + amount);
+
+            return ResponseEntity.ok(userService.save(user));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }

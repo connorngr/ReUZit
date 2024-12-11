@@ -23,20 +23,18 @@ public class UserService {
     @Autowired
     private FileStorageService fileStorageService;
 
+    public User save(User user) {
+        // Save and return the user
+        return userRepository.save(user);
+    }
+
     public List<User> getAllUsers() {
         return userRepository.findAll();
-    }
-    public User createUser(User user) {
-        return userRepository.save(user);
     }
     public Optional<User> findByEmail (String email) {return userRepository.findByEmail(email);}
     public Optional<User> findByNameOrEmail(String name, String email) {
         // Tìm kiếm user dựa trên kết hợp firstName + lastName hoặc email
         return userRepository.findByFirstNameLastNameOrEmail(name, email);
-    }
-
-    public Optional<User> findByRole(Roles role) {
-        return userRepository.findByRole(role);
     }
 
     public Optional<User> findById(Long id) {
@@ -51,6 +49,10 @@ public class UserService {
         }
         return null;
     }
+    public Optional<User> findFirstByRole(Roles role) {
+        return userRepository.findFirstByRole(Roles.ROLE_ADMIN);
+    };
+
 
     public List<User> getAllNonAdminUsers() {
         return userRepository.findByRoleNot(Roles.ROLE_ADMIN);
@@ -61,28 +63,6 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
         user.setLocked(!user.isLocked());
-        return userRepository.save(user);
-    }
-
-    public User updateMoney(Long userId, Long amount) {
-        // Find user
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
-
-        // upadate money
-        user.setMoney(user.getMoney() + amount);
-
-        // Save change
-        return userRepository.save(user);
-    }
-
-    public User updateMoney(String email, Long amount) {
-        // Find user by email
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
-        // upadate money
-        user.setMoney(user.getMoney() + amount);
-        // Save change
         return userRepository.save(user);
     }
 

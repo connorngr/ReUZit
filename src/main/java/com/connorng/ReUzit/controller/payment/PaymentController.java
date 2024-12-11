@@ -75,7 +75,7 @@ public class PaymentController {
     @PostMapping("/createCodOrder")
     public ResponseEntity<?> createCodOrder(
             @RequestParam Long idListing, @RequestParam Long idAddress) {
-try{
+        try{
         String authenticatedEmail = userService.getCurrentUserEmail();
         // Lấy thông tin người dùng từ email đã xác thực
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
@@ -124,8 +124,8 @@ try{
         transaction.setAmount(listing.getPrice());
         transactionService.addTransaction(transaction);
 
-        // Cập nhật trạng thái sản phẩm thành ACTIVE
-        listing.setStatus(Status.PENDING);  // Trạng thái sản phẩm là ACTIVE
+
+        listing.setStatus(Status.PENDING);
         listingService.saveListing(listing);
 
     String addressString = "";
@@ -164,6 +164,106 @@ try{
     }
     }
 
+    @PostMapping("/createCoinOrder")
+    public ResponseEntity<?> createcoinOrder(
+            @RequestParam Long idListing, @RequestParam Long idAddress) {
+        try{
+            String authenticatedEmail = userService.getCurrentUserEmail();
+            // Lấy thông tin người dùng từ email đã xác thực
+            Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
+            if (!userOptional.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Người dùng không tồn tại
+            }
+            User user = userOptional.get();
+
+            // Lấy thông tin danh sách sản phẩm từ idListing
+            Listing listing = listingService.findById(idListing);
+            if (listing == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Sản phẩm không tồn tại
+            }
+
+            // Lấy địa chỉ giao hàng từ idAddress
+            Address address = addressService.getAddressById(idAddress);
+            if (address == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Địa chỉ không tồn tại
+            }
+
+            // Tạo đơn hàng mới
+            Order newOrder = new Order();
+            newOrder.setShippingAddress(address);
+            newOrder.setUser(user);
+            newOrder.setListing(listing);
+            newOrder.setOrderDate(new Date());
+            newOrder.getListing().setPrice(listing.getPrice());  // Sử dụng giá đã gửi từ yêu cầu
+            Order savedOrder = orderService.createOrder(newOrder);
+
+            // Tạo đối tượng Payment với trạng thái PENDING cho COD
+            Payment payment = new Payment();
+            payment.setOrder(savedOrder);
+            payment.setStatus(Payment.PaymentStatus.PENDING);  // Thanh toán PENDING
+            payment.setMethod(Payment.PaymentMethod.COIN);  // Phương thức thanh toán là COIN
+            payment.setTransactionId("COIN-" + savedOrder.getId());  // Tạo ID giao dịch giả cho COD
+            payment.setPaymentDate(new Date());
+            Payment savedPayment = paymentService.addPayment(payment);
+
+            User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                    .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+
+            // add money for admin
+            admin.setMoney(admin.getMoney() + listing.getPrice());
+            userService.save(admin);
+
+            user.setMoney(user.getMoney() - listing.getPrice());
+            userService.save(user);
+            // Tạo và lưu Transaction cho COD
+            Transaction transaction = new Transaction();
+            transaction.setPayment(savedPayment);
+            transaction.setSender(listing.getUser());
+            transaction.setReceiver(user);
+            transaction.setTransactionDate(new Date());
+            transaction.setTransactionType(TransactionType.PRODUCT_SALE);
+            transaction.setAmount(listing.getPrice());
+            transactionService.addTransaction(transaction);
+
+            listing.setStatus(Status.PENDING);
+            listingService.saveListing(listing);
+
+            String addressString = "";
+            if (address != null) {
+                addressString = address.getStreet() + ", " + address.getWard() + ", " + address.getDistrict() + ", " + address.getProvince();
+            }
+            String sellerEmail = listing.getUser().getEmail();
+            String subject = "Đơn hàng mới cho sản phẩm của bạn!";
+            String body = String.format(
+                    "Xin chào %s,\n\n" +
+                            "Bạn vừa nhận được một đơn hàng cho sản phẩm '\"%s\"' \n" +
+                            "Phương thức thanh toán COIN.\n\n" +
+                            "Người mua: %s\n" +
+                            "Email người mua: %s\n" +
+                            "Địa chỉ giao hàng: %s\n\n" +
+                            "Vui lòng kiểm tra và chuẩn bị giao hàng.\n\n" +
+                            "Cảm ơn!",
+                    listing.getUser().getLastName(),
+                    listing.getTitle(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    addressString
+            );
+
+            emailSenderService.sendEmail(sellerEmail, subject, body);
+
+            // Trả về kết quả thành công
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedOrder);
+        } catch (Exception ex) {
+            // Log the error for debugging purposes
+            ex.printStackTrace();
+
+            // Trả về lỗi
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while creating the COD order: " + ex.getMessage());
+        }
+    }
+
     @GetMapping("/paymentCallback")
     public void paymentCallback(@RequestParam Map<String, String> queryParams, HttpServletResponse response) throws IOException {
         String vnp_ResponseCode = queryParams.get("vnp_ResponseCode");
@@ -192,8 +292,7 @@ try{
                         response.sendError(HttpServletResponse.SC_NOT_FOUND, "User or Listing not found");
                         return;
                     }
-                    long adjustedPrice = Long.parseLong(price) / 100;
-
+                    long actualAmount = Long.parseLong(price) / 100;
                     User user = userOptional.get();
 
                     // Create object order
@@ -201,7 +300,7 @@ try{
                     order.setShippingAddress(address);
                     order.setUser(user);
                     order.setListing(listing);
-                    order.getListing().setPrice(adjustedPrice); // Value api usually return * 100
+                    order.getListing().setPrice(actualAmount); // Value api usually return * 100
                     Order savedOrder = orderService.createOrder(order);
                     // Create and save a new Payment record
                     Payment payment = new Payment();
@@ -212,9 +311,12 @@ try{
                     payment.setPaymentDate(new Date());
                     Payment savedPayment = paymentService.addPayment(payment);
 
-                    // add money for admin
-                    User userAdmin = userService.updateMoney("arty16@gmail.com", listing.getPrice());
+                    User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                            .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
 
+                    // add money for admin
+                    admin.setMoney(admin.getMoney() + listing.getPrice());
+                    userService.save(admin);
                     // **Create and save Transaction**
                     Transaction transaction = new Transaction();
                     transaction.setPayment(savedPayment);
@@ -271,8 +373,8 @@ try{
 
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
+
         String orderType = "other";
-        long amount = price*100;
         String bankCode = "NCB";
 
         String vnp_TxnRef = Config.getRandomNumber(8);
@@ -284,7 +386,7 @@ try{
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(amount));
+        vnp_Params.put("vnp_Amount", String.valueOf(price*100));
         vnp_Params.put("vnp_CurrCode", "VND");
 
         vnp_Params.put("vnp_BankCode", bankCode);
@@ -354,10 +456,10 @@ try{
                         response.sendError(HttpServletResponse.SC_NOT_FOUND, "User not found");
                         return;
                     }
-                    User admin = userService.findByEmail("arty16@gmail.com")
-                            .orElseThrow(() -> new IllegalArgumentException("Admin not found with email: arty16@gmail.com"));
+                    User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                            .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
 
-                    long adjustedPrice = Long.parseLong(price) / 100;
+                    long actualAmount = Long.parseLong(price) / 100;
 
                     User user = userOptional.get();
                     Transaction transaction = new Transaction();
@@ -365,11 +467,11 @@ try{
                     transaction.setReceiver(admin); // Admin get money
                     transaction.setTransactionDate(new Date());
                     transaction.setTransactionType(TransactionType.DEPOSIT);
-                    transaction.setAmount(adjustedPrice);
+                    transaction.setAmount(actualAmount);
                     transactionService.addTransaction(transaction);
 
-                    user.setMoney(user.getMoney() + Long.parseLong(price));
-                    userService.createUser(user);
+                    user.setMoney(user.getMoney() + actualAmount);
+                    userService.save(user);
 
                     String sellerEmail = user.getEmail();
                     String subject = "Xác nhận nạp tiền vào ReUzit";
@@ -379,7 +481,7 @@ try{
                                     "Mã giao dịch: %s\n\n" +
                                     "Cảm ơn bạn đã sử dụng dịch vụ của ReUzit!",
                             user.getLastName(),
-                            adjustedPrice,
+                            actualAmount,
                             transactionId
                     );
 
@@ -404,7 +506,6 @@ try{
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String orderType = "other";
-        long amount = price*100;
         String bankCode = "NCB";
 
         String vnp_TxnRef = Config.getRandomNumber(8);
@@ -416,7 +517,7 @@ try{
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(amount));
+        vnp_Params.put("vnp_Amount", String.valueOf(price*100));
         vnp_Params.put("vnp_CurrCode", "VND");
 
         vnp_Params.put("vnp_BankCode", bankCode);

@@ -17,7 +17,7 @@ public class ListingDTO {
     private String username;
     private String title;
     private String description;
-    private Double price;
+    private Long price;
     private Long categoryId;
     private String categoryName;
     private String condition;

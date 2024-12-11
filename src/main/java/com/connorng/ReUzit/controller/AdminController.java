@@ -3,6 +3,7 @@ package com.connorng.ReUzit.controller;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,9 @@ public class AdminController {
     @PatchMapping("/users/{userId}/toggle-lock")
     public ResponseEntity<User> toggleUserLock(@PathVariable Long userId) {
         User updatedUser = userService.toggleUserLock(userId);
-        return ResponseEntity.ok(updatedUser);
+        if (updatedUser != null) {
+            return ResponseEntity.ok(updatedUser);  // Ensure updatedUser is being returned properly
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 }

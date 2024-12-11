@@ -32,16 +32,42 @@ public class ListingController {
         List<Listing> listings = listingService.getAllListings();
         return ResponseEntity.ok(listings);
     }
-    @GetMapping("/active")
+
+    @GetMapping("/logout/active")
+    public ResponseEntity<List<Listing>> getAllActiveListingsWhenLogout() {
+        List<Listing> listings = listingService.getAllActiveListingsLogout();
+        return ResponseEntity.ok(listings);
+    }
+    @GetMapping("/active/not-useremail")
     public ResponseEntity<List<Listing>> getAllActiveListings() {
         String email = userService.getCurrentUserEmail();
         List<Listing> listings = listingService.getAllActiveListings(email);
         return ResponseEntity.ok(listings);
     }
 
+    @GetMapping("/active/not-userid")
+    public ResponseEntity<List<Listing>> getAllActiveListingsExcludingUser(@RequestParam Long userId) {
+        try {
+            List<Listing> listings = listingService.getAllActiveListingsExcludingUser(userId);
+            return ResponseEntity.ok(listings);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
     @GetMapping("/category/{categoryId}/active")
     public ResponseEntity<List<Listing>> getActiveListingsByCategoryId(@PathVariable Long categoryId) {
         List<Listing> listings = listingService.getListingsByCategoryIdAndActiveStatus(categoryId);
+        return ResponseEntity.ok(listings);
+    }
+
+    @GetMapping("/category/{categoryId}/active/not-user")
+    public ResponseEntity<List<Listing>> getActiveListingsByCategoryIdNotUser(
+            @PathVariable Long categoryId,
+            @RequestParam Long userId // Assuming the user's ID is provided as a query parameter
+    ) {
+        List<Listing> listings = listingService.getActiveListingsByCategoryIdAndNotUser(categoryId, userId);
         return ResponseEntity.ok(listings);
     }
 
@@ -92,17 +118,19 @@ public class ListingController {
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteListings(@RequestParam String ids) {
+    public ResponseEntity<?> deleteListings(@RequestParam String ids) {
         List<Long> idList = Arrays.stream(ids.split(","))
                 .map(Long::parseLong)
                 .collect(Collectors.toList());
         String email = userService.getCurrentUserEmail();
-        List<Long> failedDeletions = listingService.deleteListings(idList, email);
+        List<Listing> failedDeletions = listingService.deleteListings(idList, email);
 
         if (failedDeletions.isEmpty()) {
+            // All listings were deleted successfully
             return ResponseEntity.noContent().build();
         } else {
-            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(null);
+            // Partial success: Return the failed listings
+            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(failedDeletions);
         }
     }
 

@@ -35,15 +35,30 @@ public class ListingService {
     private FileStorageService fileStorageService;
 
     public List<Listing> getAllListings() {
-        return listingRepository.findAll();
-    }
+            return listingRepository.findAll();
+        }
 
+    public List<Listing> getAllActiveListingsLogout() {
+        return listingRepository.findByStatus(Status.ACTIVE);
+    }
     public List<Listing> getAllActiveListings(String authenticatedEmail) {
         return listingRepository.findActiveListingsByStatusAndNotUserEmail(Status.ACTIVE, authenticatedEmail);
     }
 
+    public List<Listing> getAllActiveListingsByUserId(Long userId) {
+        return listingRepository.findActiveListingsByStatusAndNotUserId(Status.ACTIVE, userId);
+    }
+
+    public List<Listing> getAllActiveListingsExcludingUser(Long userId) {
+        return listingRepository.findAllActiveListingsExcludingUser(Status.ACTIVE, userId);
+    }
+
     public List<Listing> getListingsByCategoryIdAndActiveStatus(Long categoryId) {
         return listingRepository.findByCategoryIdAndStatus(categoryId, Status.ACTIVE);
+    }
+
+    public List<Listing> getActiveListingsByCategoryIdAndNotUser(Long categoryId, Long userId) {
+        return listingRepository.findActiveListingsByCategoryIdAndNotUser(categoryId, Status.ACTIVE, userId);
     }
 
     public List<Listing> getAllListingsByUser(String email) {
@@ -91,7 +106,15 @@ public class ListingService {
 
         User user = userOptional.get();
         user.setMoney(user.getMoney() - 5000);
-        userService.createUser(user);
+        userService.save(user);
+
+        User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+
+        // add money for admin
+        admin.setMoney(admin.getMoney() + 5000);
+        User userAdmin = userService.save(admin);
+
         // Create the listing and associate the fetched user and category
         Listing new_listing = new Listing();
         new_listing.setTitle(listing.getTitle());
@@ -165,18 +188,24 @@ public class ListingService {
         return listingRepository.save(listing);
     }
 
-    public List<Long> deleteListings(List<Long> ids, String authenticatedEmail) {
+    public List<Listing> deleteListings(List<Long> ids, String authenticatedEmail) {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         User authenticatedUser = userOptional.orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        List<Long> failedDeletions = new ArrayList<>();
+        List<Listing> failedDeletions = new ArrayList<>();
         boolean isAdmin = authenticatedUser.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
 
         for (Long listingId : ids) {
+            Optional<Listing> listingOptional = null;
             try {
-                Optional<Listing> listingOptional = checkIfListingExists(listingId);
+                listingOptional = checkIfListingExists(listingId);
                 Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing with ID " + listingId + " not found"));
+
+                // Check if the listing is pending
+                if (listing.getStatus() == Status.PENDING) {
+                    throw new IllegalStateException("Listing with ID " + listingId + " cannot be deleted because it is in 'PENDING' status.");
+                }
 
                 if (!isAdmin && !listing.getUser().getId().equals(authenticatedUser.getId())) {
                     throw new SecurityException("You are not authorized to delete listing with ID " + listingId);
@@ -187,7 +216,7 @@ public class ListingService {
                 listingRepository.save(listing);
 
             } catch (Exception e) {
-                failedDeletions.add(listingId);
+                failedDeletions.add(listingOptional.orElse(null));
                 System.out.println("Failed to delete listing with ID " + listingId + ": " + e.getMessage());
             }
         }
@@ -209,7 +238,7 @@ public class ListingService {
         dto.setUsername(listing.getUser().getUsername());
         dto.setTitle(listing.getTitle());
         dto.setDescription(listing.getDescription());
-        dto.setPrice(Double.valueOf(listing.getPrice()));
+        dto.setPrice(Long.valueOf(listing.getPrice()));
         dto.setCategoryId(listing.getCategory().getId());
         dto.setCategoryName(listing.getCategory().getName());
         dto.setCondition(String.valueOf(listing.getCondition()));

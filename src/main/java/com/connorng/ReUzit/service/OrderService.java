@@ -55,8 +55,8 @@ public class OrderService {
             User buyer = transaction.getReceiver();   // Assuming sender is the buyer
             Long amount = order.getListing().getPrice();
 
-            User admin = userService.findByRole(Roles.ROLE_ADMIN)
-                    .orElseThrow(() -> new IllegalArgumentException("Admin not found with ROLE_ADMIN"));
+            User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                    .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
 
             String emailSubject;
             String emailBody;
@@ -67,10 +67,10 @@ public class OrderService {
                     order.setConfirmationDate(new Date());
                     Long adminFee = (long) (amount * 0.01); // Admin takes a 10% fee
                     seller.setMoney(seller.getMoney() + (amount - adminFee));
-                    userService.createUser(seller);
+                    userService.save(seller);
 
                     admin.setMoney(admin.getMoney() - (amount - adminFee));
-                    userService.createUser(admin);
+                    userService.save(admin);
                     // Send email to seller
                     emailSubject = "Xác nhận bán hàng thành công!";
                     emailBody = String.format(
@@ -89,11 +89,57 @@ public class OrderService {
                 if (status == Status.INACTIVE) {
                     // Refund amount from admin to buyer
                     buyer.setMoney(buyer.getMoney() + amount);
-                    userService.createUser(buyer);
+                    userService.save(buyer);
 
                     // Deduct from admin account
                     admin.setMoney(admin.getMoney() - amount);
-                    userService.createUser(admin);
+                    userService.save(admin);
+                    // Send email to seller about cancellation
+                    emailSubject = "Đơn hàng đã bị hủy";
+                    emailBody = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Đơn hàng của sản phẩm \"%s\" đã bị hủy.\n\n" +
+                                    "Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi.\n\n" +
+                                    "Trân trọng,\nĐội ngũ ReUzit",
+                            seller.getLastName(),
+                            order.getListing().getTitle()
+                    );
+                    emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
+                }
+            }
+            if (transaction.getPayment().getMethod().name().equals("COIN")) {
+                // Update based on status
+                if (status == Status.SOLD) {
+                    order.setConfirmationDate(new Date());
+                    Long adminFee = (long) (amount * 0.01); // Admin takes a 10% fee
+                    seller.setMoney(seller.getMoney() + (amount - adminFee));
+                    userService.save(seller);
+
+                    admin.setMoney(admin.getMoney() - (amount - adminFee));
+                    userService.save(admin);
+                    // Send email to seller
+                    emailSubject = "Xác nhận bán hàng thành công!";
+                    emailBody = String.format(
+                            "Xin chào %s,\n\n" +
+                                    "Sản phẩm \"%s\" đã được bán thành công với giá %d VND.\n" +
+                                    "Số tiền sau phí đã được cộng vào tài khoản của bạn: %d VND.\n\n" +
+                                    "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!\n\n" +
+                                    "Trân trọng,\nĐội ngũ ReUzit",
+                            seller.getLastName(),
+                            order.getListing().getTitle(),
+                            amount,
+                            amount - adminFee
+                    );
+                    emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
+                }
+                if (status == Status.INACTIVE) {
+                    // Refund amount from admin to buyer
+                    buyer.setMoney(buyer.getMoney() + amount);
+                    userService.save(buyer);
+
+                    // Deduct from admin account
+                    admin.setMoney(admin.getMoney() - amount);
+                    userService.save(admin);
                     // Send email to seller about cancellation
                     emailSubject = "Đơn hàng đã bị hủy";
                     emailBody = String.format(

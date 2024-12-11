@@ -40,7 +40,7 @@ public class Payment {
     }
 
     public enum PaymentMethod {
-        COD, BANK_TRANSFER, MOMO
+        COD, BANK_TRANSFER, COIN
     }
 }
 
