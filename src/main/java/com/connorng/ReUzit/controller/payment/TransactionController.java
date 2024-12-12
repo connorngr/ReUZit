@@ -27,7 +27,7 @@ public class TransactionController {
 
     @GetMapping("/seller-orders")
     public ResponseEntity<List<Transaction>> getSellerOrders() {
-        String email = userService.getCurrentUserEmail(); // Assume this fetches the current user's email
+        String email = userService.getCurrentUserEmail(); // Fetches the current user's email
         List<Transaction> transactions = transactionService.getAllOrdersBySellerEmail(email);
         return ResponseEntity.ok(transactions);
     }
@@ -36,6 +36,14 @@ public class TransactionController {
     public ResponseEntity<List<Transaction>> getBuyerOrders() {
         String email = userService.getCurrentUserEmail(); // Assume this fetches the current user's email
         List<Transaction> transactions = transactionService.getAllOrdersByBuyerEmail(email);
+        return ResponseEntity.ok(transactions);
+    }
+
+    // New API to get all transactions
+    @GetMapping
+    public ResponseEntity<List<Transaction>> getAllTransactions() {
+        String email = userService.getCurrentUserEmail();
+        List<Transaction> transactions = transactionService.getAllTransactions(email);
         return ResponseEntity.ok(transactions);
     }
 }

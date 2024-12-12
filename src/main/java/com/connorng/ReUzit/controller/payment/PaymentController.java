@@ -112,6 +112,7 @@ public class PaymentController {
         payment.setMethod(Payment.PaymentMethod.COD);  // Phương thức thanh toán là COD
         payment.setTransactionId("COD-" + savedOrder.getId());  // Tạo ID giao dịch giả cho COD
         payment.setPaymentDate(new Date());
+        payment.setAmount(listing.getPrice());
         Payment savedPayment = paymentService.addPayment(payment);
 
         // Tạo và lưu Transaction cho COD
@@ -121,7 +122,7 @@ public class PaymentController {
         transaction.setReceiver(user);
         transaction.setTransactionDate(new Date());
         transaction.setTransactionType(TransactionType.PRODUCT_SALE);
-        transaction.setAmount(listing.getPrice());
+
         transactionService.addTransaction(transaction);
 
 
@@ -204,6 +205,7 @@ public class PaymentController {
             payment.setMethod(Payment.PaymentMethod.COIN);  // Phương thức thanh toán là COIN
             payment.setTransactionId("COIN-" + savedOrder.getId());  // Tạo ID giao dịch giả cho COD
             payment.setPaymentDate(new Date());
+            payment.setAmount(listing.getPrice());
             Payment savedPayment = paymentService.addPayment(payment);
 
             User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
@@ -222,7 +224,7 @@ public class PaymentController {
             transaction.setReceiver(user);
             transaction.setTransactionDate(new Date());
             transaction.setTransactionType(TransactionType.PRODUCT_SALE);
-            transaction.setAmount(listing.getPrice());
+
             transactionService.addTransaction(transaction);
 
             listing.setStatus(Status.PENDING);
@@ -309,6 +311,7 @@ public class PaymentController {
                     payment.setMethod(Payment.PaymentMethod.BANK_TRANSFER);
                     payment.setTransactionId(transactionId); // Generate transaction ID
                     payment.setPaymentDate(new Date());
+                    payment.setAmount(listing.getPrice());
                     Payment savedPayment = paymentService.addPayment(payment);
 
                     User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
@@ -324,7 +327,7 @@ public class PaymentController {
                     transaction.setReceiver(user);
                     transaction.setTransactionDate(new Date());
                     transaction.setTransactionType(TransactionType.PRODUCT_SALE);
-                    transaction.setAmount(listing.getPrice());
+
                     transactionService.addTransaction(transaction);
 
                     listing.setStatus(Status.PENDING);
@@ -461,13 +464,23 @@ public class PaymentController {
 
                     long actualAmount = Long.parseLong(price) / 100;
 
+                    // Create and save a new Payment record
+                    Payment payment = new Payment();
+                    payment.setOrder(null);
+                    payment.setStatus(Payment.PaymentStatus.SUCCESS);
+                    payment.setMethod(Payment.PaymentMethod.BANK_TRANSFER);
+                    payment.setTransactionId(transactionId); // Generate transaction ID
+                    payment.setPaymentDate(new Date());
+                    payment.setAmount(actualAmount);
+                    Payment savedPayment = paymentService.addPayment(payment);
+
                     User user = userOptional.get();
                     Transaction transaction = new Transaction();
                     transaction.setSender(user); // seller (user)
                     transaction.setReceiver(admin); // Admin get money
                     transaction.setTransactionDate(new Date());
                     transaction.setTransactionType(TransactionType.DEPOSIT);
-                    transaction.setAmount(actualAmount);
+
                     transactionService.addTransaction(transaction);
 
                     user.setMoney(user.getMoney() + actualAmount);

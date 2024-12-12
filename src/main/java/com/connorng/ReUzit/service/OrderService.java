@@ -39,7 +39,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order updateOrderStatus(Long orderId, Status status, Long transactionId) {
+    public Order updateOrderStatus(Long orderId, Status status, Long transactionId, String email) {
         Optional<Order> orderOptional = orderRepository.findById(orderId);
         if (orderOptional.isPresent()) {
             Order order = orderOptional.get();
@@ -53,8 +53,18 @@ public class OrderService {
             Transaction transaction = transactionOptional.get();
             User seller = transaction.getSender(); // Assuming receiver is the seller
             User buyer = transaction.getReceiver();   // Assuming sender is the buyer
-            Long amount = order.getListing().getPrice();
 
+            User currentUser = userService.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+            // Check if the user has the admin role
+            boolean isAdmin = currentUser.getRole().equals(Roles.ROLE_ADMIN);
+
+            if (!isAdmin && !buyer.getEmail().equals(email)) {
+                throw new SecurityException("You are not authorized to update this transaction.");
+            }
+
+            Long amount = order.getListing().getPrice();
             User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
                     .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
 
@@ -106,6 +116,23 @@ public class OrderService {
                     );
                     emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
                 }
+
+                if(status == Status.PENDING && isAdmin) {
+                    if(order.getListing().getStatus().equals(Status.SOLD)) {
+                        seller.setMoney(seller.getMoney() - amount);
+                        userService.save(seller);
+
+                        admin.setMoney(admin.getMoney() + amount);
+                        userService.save(admin);
+                    }
+                    if(order.getListing().getStatus().equals(Status.INACTIVE)) {
+                        seller.setMoney(buyer.getMoney() - amount);
+                        userService.save(seller);
+
+                        admin.setMoney(admin.getMoney() + amount);
+                        userService.save(admin);
+                    }
+                }
             }
             if (transaction.getPayment().getMethod().name().equals("COIN")) {
                 // Update based on status
@@ -151,6 +178,22 @@ public class OrderService {
                             order.getListing().getTitle()
                     );
                     emailSenderService.sendEmail(seller.getEmail(), emailSubject, emailBody);
+                }
+                if(status == Status.PENDING && isAdmin) {
+                    if(order.getListing().getStatus().equals(Status.SOLD)) {
+                        seller.setMoney(seller.getMoney() - amount);
+                        userService.save(seller);
+
+                        admin.setMoney(admin.getMoney() + amount);
+                        userService.save(admin);
+                    }
+                    if(order.getListing().getStatus().equals(Status.INACTIVE)) {
+                        seller.setMoney(buyer.getMoney() - amount);
+                        userService.save(seller);
+
+                        admin.setMoney(admin.getMoney() + amount);
+                        userService.save(admin);
+                    }
                 }
             }
             if (transaction.getPayment().getMethod().name().equals("COD")) {

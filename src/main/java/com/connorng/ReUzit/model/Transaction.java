@@ -39,6 +39,4 @@ public class Transaction {
     @Column(nullable = false)
     private TransactionType transactionType;
 
-    @Column(nullable = false)
-    private Long amount;
 }

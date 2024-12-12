@@ -13,7 +13,6 @@ import java.util.Optional;
 @Repository
 public interface UserRepository  extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
-
     List<User> findByRoleNot(Roles role);
     @Query("SELECT u FROM User u WHERE CONCAT(u.firstName, u.lastName) = ?1 OR u.email = ?2")
     Optional<User> findByFirstNameLastNameOrEmail(String name, String email);
