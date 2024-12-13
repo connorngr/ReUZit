@@ -2,15 +2,11 @@ package com.connorng.ReUzit.service;
 
 import com.connorng.ReUzit.controller.listing.ListingRequest;
 import com.connorng.ReUzit.controller.listing.ListingUpdateRequest;
-import com.connorng.ReUzit.model.Category;
-import com.connorng.ReUzit.model.Image;
-import com.connorng.ReUzit.model.Listing;
-import com.connorng.ReUzit.model.User;
+import com.connorng.ReUzit.model.*;
 import com.connorng.ReUzit.repository.ListingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import com.connorng.ReUzit.Common.FileStorageService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -132,11 +128,11 @@ public class ListingService {
         }
 
         if (listingUpdateRequest.getCondition() != null) {
-            listing.setCondition(listingUpdateRequest.getCondition());
+            listing.setCondition(Condition.valueOf(listingUpdateRequest.getCondition()));
         }
 
         if (listingUpdateRequest.getStatus() != null) {
-            listing.setStatus(listingUpdateRequest.getStatus());
+            listing.setStatus(Status.valueOf(listingUpdateRequest.getStatus()));
         }
 
         return listingRepository.save(listing);

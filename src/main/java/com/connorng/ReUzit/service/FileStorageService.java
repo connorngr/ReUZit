@@ -1,14 +1,17 @@
-package com.connorng.ReUzit.Common;
+package com.connorng.ReUzit.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
@@ -35,5 +38,26 @@ public class FileStorageService {
         // Return the relative path where the file is saved
         return "/uploads/" + filename; // Adjust the URL as necessary for your application
     }
-}
 
+    public String downloadAndSaveImage(String imageUrl) throws IOException {
+        // Ensure the upload directory exists
+        Files.createDirectories(Paths.get(uploadDir));
+
+        // Download the image
+        InputStream in = new URL(imageUrl).openStream();
+
+        // Extract the file name from the URL
+        String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+
+        // Define the file path where the image will be saved
+        Path targetPath = Paths.get(uploadDir, fileName);
+
+        // Save the image to the target directory
+        Files.copy(in, targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+        // Close the input stream
+        in.close();
+
+        return "/uploads/" + fileName; // Return the path where the image was saved
+    }
+}
