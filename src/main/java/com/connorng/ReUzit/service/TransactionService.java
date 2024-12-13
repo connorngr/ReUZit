@@ -1,9 +1,6 @@
 package com.connorng.ReUzit.service;
 
-import com.connorng.ReUzit.model.Roles;
-import com.connorng.ReUzit.model.Transaction;
-import com.connorng.ReUzit.model.TransactionType;
-import com.connorng.ReUzit.model.User;
+import com.connorng.ReUzit.model.*;
 import com.connorng.ReUzit.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +17,12 @@ public class TransactionService{
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ListingService listingService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     public Transaction addTransaction(Transaction transaction) {
         return transactionRepository.save(transaction);
@@ -56,5 +59,26 @@ public class TransactionService{
     // Add the new findById method
     public Optional<Transaction> findById(Long transactionId) {
         return transactionRepository.findById(transactionId);
+    }
+    public List<Transaction> findByPaymentStatus(Payment.PaymentStatus status) {
+        return transactionRepository.findByPaymentStatus(status);
+    }
+
+    public List<Transaction> findByListingStatus(Status status) {
+        return transactionRepository.findByOrder_Listing_Status(status);
+    }
+
+    public List<Transaction> getAllDepositTransactions(String email) {
+        // Find the admin user to validate the request
+        User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+
+        // Validate if the email belongs to the admin
+        if (!admin.getEmail().equals(email)) {
+            throw new SecurityException("You are not authorized to access deposit transactions.");
+        }
+
+        // Fetch transactions with type DEPOSIT
+        return transactionRepository.findAllByTransactionType(TransactionType.DEPOSIT);
     }
 }

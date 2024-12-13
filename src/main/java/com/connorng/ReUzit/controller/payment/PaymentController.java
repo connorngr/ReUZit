@@ -307,7 +307,7 @@ public class PaymentController {
                     // Create and save a new Payment record
                     Payment payment = new Payment();
                     payment.setOrder(savedOrder);
-                    payment.setStatus(Payment.PaymentStatus.SUCCESS);
+                    payment.setStatus(Payment.PaymentStatus.PENDING);
                     payment.setMethod(Payment.PaymentMethod.BANK_TRANSFER);
                     payment.setTransactionId(transactionId); // Generate transaction ID
                     payment.setPaymentDate(new Date());
@@ -480,6 +480,7 @@ public class PaymentController {
                     transaction.setReceiver(admin); // Admin get money
                     transaction.setTransactionDate(new Date());
                     transaction.setTransactionType(TransactionType.DEPOSIT);
+                    transaction.setPayment(savedPayment);
 
                     transactionService.addTransaction(transaction);
 

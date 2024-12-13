@@ -45,10 +45,6 @@ public class ListingService {
         return listingRepository.findActiveListingsByStatusAndNotUserEmail(Status.ACTIVE, authenticatedEmail);
     }
 
-    public List<Listing> getAllActiveListingsByUserId(Long userId) {
-        return listingRepository.findActiveListingsByStatusAndNotUserId(Status.ACTIVE, userId);
-    }
-
     public List<Listing> getAllActiveListingsExcludingUser(Long userId) {
         return listingRepository.findAllActiveListingsExcludingUser(Status.ACTIVE, userId);
     }
@@ -79,19 +75,9 @@ public class ListingService {
         return Optional.of(convertToDTO(listing));
     }
 
-    public List<Listing> getListingsByUserEmail(String userEmail) {
-        Optional<User> userOptional = userService.findByEmail(userEmail);
-
-        if (!userOptional.isPresent()) {
-            throw new IllegalArgumentException("User not found.");
-        }
-        return listingRepository.findByUser(userOptional);
-    }
-
     public Listing saveListing(Listing listing) {
         return listingRepository.save(listing);
     }
-
 
     public ListingDTO createListing(ListingRequest listing, String authenticatedEmail) throws IOException {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
