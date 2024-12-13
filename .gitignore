@@ -39,9 +39,9 @@ build/
 !**/src/test/**/build/
 
 src/main/resources/static/uploads/*
-src/main/java/com/connorng/ReUzit/Common/vnpay/ajaxServlet.java
-src/main/java/com/connorng/ReUzit/Common/vnpay/vnpayQuery.java
-src/main/java/com/connorng/ReUzit/Common/vnpay/vnpayRefund.java
+src/main/java/com/connorng/ReUzit/common/vnpay/ajaxServlet.java
+src/main/java/com/connorng/ReUzit/common/vnpay/vnpayQuery.java
+src/main/java/com/connorng/ReUzit/common/vnpay/vnpayRefund.java
 uploads/*
 src/main/java/com/connorng/ReUzit/s3
 ### VS Code ###
@@ -49,8 +49,13 @@ src/main/java/com/connorng/ReUzit/s3
 .idea/
 
 /node_modules/
+/uploadFiles/*
 
 .env
 .aws/credentials
+src/main/resources/application.properties
 application.properties
 application.yml
+
+/venv/
+replacement.txt

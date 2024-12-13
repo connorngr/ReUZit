@@ -61,4 +61,25 @@ public class ImageService {
     public List<Image> getAllImagesByListingId(Long listingId) {
         return imageRepository.findByListingId(listingId);
     }
+
+    public Image updateImage(Long id, MultipartFile file) throws IOException {
+        Optional<Image> optionalImage = imageRepository.findById(id);
+
+        if (optionalImage.isEmpty()) {
+            throw new IllegalArgumentException("Image with ID " + id + " does not exist.");
+        }
+
+        Image image = optionalImage.get();
+
+        // Save new file and get its URL
+        String newImageUrl = fileStorageService.saveFileToStorage(file);
+
+        // Update URL
+        image.setUrl(newImageUrl);
+
+        // Save updated image
+        imageRepository.save(image);
+
+        return image;
+    }
 }

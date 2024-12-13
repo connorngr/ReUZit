@@ -21,7 +21,7 @@ public class Transaction {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "payment_id", nullable = false)
+    @JoinColumn(name = "payment_id", nullable = true)
     private Payment payment;
 
     @ManyToOne
@@ -32,8 +32,11 @@ public class Transaction {
     @JoinColumn(name = "receiver_id", nullable = false)
     private User receiver; // maybe is admin or buyer
 
-    private Double amount;
-
     @Temporal(TemporalType.TIMESTAMP)
     private Date transactionDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TransactionType transactionType;
+
 }

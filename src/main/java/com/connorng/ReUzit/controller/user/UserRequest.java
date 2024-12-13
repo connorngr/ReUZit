@@ -1,4 +1,4 @@
-package com.connorng.ReUzit.controller.User;
+package com.connorng.ReUzit.controller.user;
 
 import org.springframework.web.multipart.MultipartFile;
 

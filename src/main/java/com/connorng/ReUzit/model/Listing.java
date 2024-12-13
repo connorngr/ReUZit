@@ -2,6 +2,7 @@ package com.connorng.ReUzit.model;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,21 +22,19 @@ public class Listing {
     private Long id;
 
     @ManyToOne
-    @JsonBackReference
     @JoinColumn(name = "user_id", nullable = false)
     private User user;  // Assuming User entity already exists
 
     @Column(nullable = false)
     private String title;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT") // Sử dụng kiểu TEXT trong cơ sở dữ liệu
     private String description;
 
     @Column(nullable = false)
-    private Double price;
+    private Long price;
 
     @ManyToOne
-    @JsonBackReference
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
@@ -58,6 +57,10 @@ public class Listing {
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private java.util.Date updatedAt;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     //Created in db for the first time
     @PrePersist
     protected void onCreate() {

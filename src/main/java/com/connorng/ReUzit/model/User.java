@@ -2,6 +2,7 @@ package com.connorng.ReUzit.model;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -13,10 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Builder
 @Entity
@@ -50,7 +48,7 @@ public class User implements UserDetails {
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonManagedReference
+    @JsonIgnoreProperties("user")
     private Set<Listing> listings = new HashSet<>();
 
     @Column(nullable = true)
@@ -59,10 +57,17 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Roles role;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // Phía quản lý của quan hệ OneToMany
+    private List<Address> addresses;
+
     private boolean locked = false;
 
     @Column(nullable = false)
-    private Double money = 0.0;
+    private Long money = 0L;
+
+    @Column(nullable = true)
+    private String bio;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

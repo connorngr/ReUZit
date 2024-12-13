@@ -10,12 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
@@ -28,7 +28,7 @@ public class AuthenticationService {
     @Autowired
     private JwtService jwtService;
     @Autowired
-    private FileStorageService fileStorageService;
+    private com.connorng.ReUzit.service.FileStorageService fileStorageService;
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -41,13 +41,13 @@ public class AuthenticationService {
         return true;
     };
 
-
     public AuthenticationResponse register(RegisterRequest request, MultipartFile imageUrl) throws IOException {
         Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
         if (existingUser.isPresent()) {
             // Handle the error (e.g., throw an exception or return an error response)
             throw new IllegalArgumentException("Email is already registered.");
         }
+
         String imageUrlPath = null;
         if (imageUrl != null && !imageUrl.isEmpty()) {
             imageUrlPath = fileStorageService.saveFileToStorage(imageUrl);
@@ -59,7 +59,9 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Roles.ROLE_USER)
                 .imageUrl(imageUrlPath)
-                .money(0.0)
+                .money(0L)
+                .addresses(new ArrayList<>())
+                .bio(null)
                 .build();
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
@@ -77,7 +79,6 @@ public class AuthenticationService {
         );
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow();
-//        System.out.println(user);
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
@@ -101,7 +102,8 @@ public class AuthenticationService {
                     .imageUrl(savedImagePath) // Assuming the Google user has an image URL
                     .password(passwordEncoder.encode(googleUser.getPassword()))
                     .role(Roles.ROLE_USER)
-                    .money(0.0)
+                    .money(0L)
+                    .addresses(new ArrayList<>())
                     .build();
             userRepository.save(user);
         }

@@ -1,5 +1,4 @@
 package com.connorng.ReUzit.service;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -7,6 +6,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +39,7 @@ public class FileStorageService {
         // Return the relative path where the file is saved
         return "/uploads/" + filename; // Adjust the URL as necessary for your application
     }
+
 
     public String downloadAndSaveImage(String imageUrl) throws IOException {
         // Ensure the upload directory exists

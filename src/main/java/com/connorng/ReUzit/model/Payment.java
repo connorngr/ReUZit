@@ -21,10 +21,8 @@ public class Payment {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id", nullable = true)
     private Order order;
-
-    private Double amount;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status; // e.g., PENDING, SUCCESS, FAILED
@@ -37,12 +35,15 @@ public class Payment {
     @Temporal(TemporalType.TIMESTAMP)
     private Date paymentDate;
 
+    @Column(nullable = false)
+    private Long amount;
+
     public enum PaymentStatus {
         PENDING, SUCCESS, FAILED
     }
 
     public enum PaymentMethod {
-        DIRECT, BANK_TRANSFER, MOMO
+        COD, BANK_TRANSFER, COIN
     }
 }
 

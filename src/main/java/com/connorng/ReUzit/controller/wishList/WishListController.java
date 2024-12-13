@@ -61,7 +61,7 @@ public class WishListController {
 
         try {
             boolean exists = wishListService.isWishListAlready(email, listingId);
-            return ResponseEntity.ok(exists);
+            return ResponseEntity.ok(exists); // Return true if isDelete = false.
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(false);
         }

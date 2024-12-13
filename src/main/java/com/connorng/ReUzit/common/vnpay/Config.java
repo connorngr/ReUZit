@@ -1,5 +1,5 @@
 
-package com.connorng.ReUzit.Common.vnpay;
+package com.connorng.ReUzit.common.vnpay;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -15,14 +15,12 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 
-/**
- *
- * @author CTT VNPAY
- */
+
 public class Config {
 
     public static String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
     public static String vnp_ReturnUrl = "http://localhost:8080/api/payments/paymentCallback";
+    public static String vnp_ReturnUrlDeposit = "http://localhost:8080/api/payments/depositCallback";
     public static String vnp_TmnCode = "QIGIAVOD";
     public static String secretKey = "D223EGWND9RVESD8SU1FGIP75S69R9G3";
     public static String vnp_ApiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";

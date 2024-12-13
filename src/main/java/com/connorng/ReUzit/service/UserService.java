@@ -1,47 +1,57 @@
 package com.connorng.ReUzit.service;
 
-import com.connorng.ReUzit.exception.ResourceNotFoundException;
 import com.connorng.ReUzit.model.Roles;
 import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.connorng.ReUzit.service.FileStorageService fileStorageService;
+
+    public User save(User user) {
+        // Save and return the user
+        return userRepository.save(user);
+    }
+
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
-    public User createUser(User user) {
-        return userRepository.save(user);
-    }
     public Optional<User> findByEmail (String email) {return userRepository.findByEmail(email);}
+    public Optional<User> findByNameOrEmail(String name, String email) {
+        // Tìm kiếm user dựa trên kết hợp firstName + lastName hoặc email
+        return userRepository.findByFirstNameLastNameOrEmail(name, email);
+    }
 
-    public User findById(Long id) {
-        return userRepository.findById(id).orElse(null);
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
     }
 
     public String getCurrentUserEmail() {
         // Get the current authenticated user's email
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = null;
-
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            email = ((UserDetails) authentication.getPrincipal()).getUsername();  // Assuming email is used as username
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            return ((User) authentication.getPrincipal()).getEmail();
         }
-        return email;
+        return null;
     }
+    public Optional<User> findFirstByRole(Roles role) {
+        return userRepository.findFirstByRole(Roles.ROLE_ADMIN);
+    };
+
 
     public List<User> getAllNonAdminUsers() {
         return userRepository.findByRoleNot(Roles.ROLE_ADMIN);
@@ -50,30 +60,40 @@ public class UserService {
     @Transactional
     public User toggleUserLock(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
         user.setLocked(!user.isLocked());
         return userRepository.save(user);
     }
 
-    public User updateMoney(Long userId, Double amount) {
-        // Find user
+    public User updateUserInfo(Long userId, String firstName, String lastName, String bio) {
+        // Find user by ID
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
-        // upadate money
-        user.setMoney(user.getMoney() + amount);
+        // Update fields
+        if (firstName != null && !firstName.isEmpty()) {
+            user.setFirstName(firstName);
+        }
+        if (lastName != null && !lastName.isEmpty()) {
+            user.setLastName(lastName);
+        }
+        if (bio != null) {
+            user.setBio(bio);
+        }
 
-        // Save change
+        // Save updated user
         return userRepository.save(user);
     }
 
-    public User updateMoney(String email, Double amount) {
-        // Find user by email
+    public User updateUserImage(String email, MultipartFile file) throws IOException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
-        // upadate money
-        user.setMoney(user.getMoney() + amount);
-        // Save change
+
+        String imageUrl = fileStorageService.saveFileToStorage(file);
+
+        user.setImageUrl(imageUrl);
+
         return userRepository.save(user);
     }
+
 }

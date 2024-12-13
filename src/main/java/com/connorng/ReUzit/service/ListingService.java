@@ -3,7 +3,11 @@ package com.connorng.ReUzit.service;
 import com.connorng.ReUzit.controller.listing.ListingRequest;
 import com.connorng.ReUzit.controller.listing.ListingUpdateRequest;
 import com.connorng.ReUzit.model.*;
+import com.connorng.ReUzit.controller.listing.ListingUpdateRequest;
+import com.connorng.ReUzit.dto.ListingDTO;
+import com.connorng.ReUzit.model.*;
 import com.connorng.ReUzit.repository.ListingRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,16 +18,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 //Add admin the permission later
 @Service
 public class ListingService {
     @Autowired
     private ListingRepository listingRepository;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private CategoryService categoryService;
 
@@ -31,27 +34,51 @@ public class ListingService {
     private FileStorageService fileStorageService;
 
     public List<Listing> getAllListings() {
-        return listingRepository.findAll();
+            return listingRepository.findAll();
+        }
+
+    public List<Listing> getAllActiveListingsLogout() {
+        return listingRepository.findByStatus(Status.ACTIVE);
+    }
+    public List<Listing> getAllActiveListings(String authenticatedEmail) {
+        return listingRepository.findActiveListingsByStatusAndNotUserEmail(Status.ACTIVE, authenticatedEmail);
+    }
+
+    public List<Listing> getAllActiveListingsExcludingUser(Long userId) {
+        return listingRepository.findAllActiveListingsExcludingUser(Status.ACTIVE, userId);
+    }
+
+    public List<Listing> getListingsByCategoryIdAndActiveStatus(Long categoryId) {
+        return listingRepository.findByCategoryIdAndStatus(categoryId, Status.ACTIVE);
+    }
+
+    public List<Listing> getActiveListingsByCategoryIdAndNotUser(Long categoryId, Long userId) {
+        return listingRepository.findActiveListingsByCategoryIdAndNotUser(categoryId, Status.ACTIVE, userId);
+    }
+
+    public List<Listing> getAllListingsByUser(String email) {
+        Optional<User> userOptional = userService.findByEmail(email);
+        if (!userOptional.isPresent()) {
+            throw new IllegalArgumentException("User not found.");
+        }
+        return listingRepository.findAllByUserIdAndNotDeleted(userOptional.get().getId());
     }
 
     public Listing findById(Long id) {
         return listingRepository.findById(id).orElse(null);
     }
 
-    public Optional<Listing> getListingById(Long listingId) {
-        return listingRepository.findById(listingId);
+    public Optional<ListingDTO> getListingById(Long listingId) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new EntityNotFoundException("Listing not found with id: " + listingId));
+        return Optional.of(convertToDTO(listing));
     }
 
-    public List<Listing> getListingsByUserEmail(String userEmail) {
-        Optional<User> userOptional = userService.findByEmail(userEmail);
-
-        if (!userOptional.isPresent()) {
-            throw new IllegalArgumentException("User not found.");
-        }
-        return listingRepository.findByUser(userOptional);
+    public Listing saveListing(Listing listing) {
+        return listingRepository.save(listing);
     }
 
-    public Listing createListing(ListingRequest listing, String authenticatedEmail) throws IOException {
+    public ListingDTO createListing(ListingRequest listing, String authenticatedEmail) throws IOException {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         if (!userOptional.isPresent()) {
             throw new IllegalArgumentException("User not found.");
@@ -62,14 +89,25 @@ public class ListingService {
             throw new IllegalArgumentException("Category not found.");
         }
 
+        User user = userOptional.get();
+        user.setMoney(user.getMoney() - 5000);
+        userService.save(user);
+
+        User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+
+        // add money for admin
+        admin.setMoney(admin.getMoney() + 5000);
+        User userAdmin = userService.save(admin);
+
         // Create the listing and associate the fetched user and category
         Listing new_listing = new Listing();
         new_listing.setTitle(listing.getTitle());
         new_listing.setDescription(listing.getDescription());
         new_listing.setPrice(listing.getPrice());
-        new_listing.setCondition(listing.getCondition());
-        new_listing.setStatus(listing.getStatus());
-        new_listing.setUser(userOptional.get());  // Set the authenticated user
+        new_listing.setCondition(Condition.valueOf(listing.getCondition()));
+        new_listing.setStatus(Status.ACTIVE);
+        new_listing.setUser(user);  // Set the authenticated user
         new_listing.setCategory(categoryOptional.get());  // Set the associated category
 
         // Save the listing and return the response
@@ -82,7 +120,8 @@ public class ListingService {
             images.add(image);
         }
         new_listing.setImages(images);
-        return listingRepository.save(new_listing);
+        Listing savedListing = listingRepository.save(new_listing);
+        return convertToDTO(savedListing);
     }
 
     public Listing updateListing(Long listingId, ListingUpdateRequest listingUpdateRequest, String authenticatedEmail) throws IOException {
@@ -131,45 +170,44 @@ public class ListingService {
             listing.setCondition(Condition.valueOf(listingUpdateRequest.getCondition()));
         }
 
-        if (listingUpdateRequest.getStatus() != null) {
-            listing.setStatus(Status.valueOf(listingUpdateRequest.getStatus()));
-        }
-
         return listingRepository.save(listing);
     }
 
-    public List<Long> deleteListings(List<Long> ids, String authenticatedEmail) {
-        // Get information user login
+    public List<Listing> deleteListings(List<Long> ids, String authenticatedEmail) {
         Optional<User> userOptional = userService.findByEmail(authenticatedEmail);
         User authenticatedUser = userOptional.orElseThrow(() -> new IllegalArgumentException("User not found"));
-        // List don't delete
-        List<Long> failedDeletions = new ArrayList<>();
-        // Is Admin
+
+        List<Listing> failedDeletions = new ArrayList<>();
         boolean isAdmin = authenticatedUser.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
 
         for (Long listingId : ids) {
+            Optional<Listing> listingOptional = null;
             try {
-                // Check listing
-                Optional<Listing> listingOptional = checkIfListingExists(listingId);
+                listingOptional = checkIfListingExists(listingId);
                 Listing listing = listingOptional.orElseThrow(() -> new RuntimeException("Listing with ID " + listingId + " not found"));
 
-                // own listing ?
+                // Check if the listing is pending
+                if (listing.getStatus() == Status.PENDING) {
+                    throw new IllegalStateException("Listing with ID " + listingId + " cannot be deleted because it is in 'PENDING' status.");
+                }
+
                 if (!isAdmin && !listing.getUser().getId().equals(authenticatedUser.getId())) {
                     throw new SecurityException("You are not authorized to delete listing with ID " + listingId);
                 }
 
-                // Delete listing database
-                listingRepository.deleteById(listingId);
+                // Perform soft delete by setting isDeleted flag
+                listing.setDeleted(true);
+                listingRepository.save(listing);
 
             } catch (Exception e) {
-                // if error print information idListing
-                failedDeletions.add(listingId);
+                failedDeletions.add(listingOptional.orElse(null));
                 System.out.println("Failed to delete listing with ID " + listingId + ": " + e.getMessage());
             }
         }
-        return failedDeletions; // Return list id don't delete, and null if finish
+        return failedDeletions;
     }
+
     private Optional<Listing> checkIfListingExists(Long listingId) {
         Optional<Listing> listingOptional = listingRepository.findById(listingId);
         if (!listingOptional.isPresent()) {
@@ -178,5 +216,22 @@ public class ListingService {
         return listingOptional;
     }
 
+    private ListingDTO convertToDTO(Listing listing) {
+        ListingDTO dto = new ListingDTO();
+        dto.setId(listing.getId());
+        dto.setUserId(listing.getUser().getId());
+        dto.setUsername(listing.getUser().getUsername());
+        dto.setTitle(listing.getTitle());
+        dto.setDescription(listing.getDescription());
+        dto.setPrice(Long.valueOf(listing.getPrice()));
+        dto.setCategoryId(listing.getCategory().getId());
+        dto.setCategoryName(listing.getCategory().getName());
+        dto.setCondition(String.valueOf(listing.getCondition()));
+        dto.setStatus(String.valueOf(listing.getStatus()));
+        dto.setCreatedAt(listing.getCreatedAt());
+        dto.setUpdatedAt(listing.getUpdatedAt());
+        dto.setImages(listing.getImages());
+        return dto;
+    }
 
 }
