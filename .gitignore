@@ -59,3 +59,6 @@ application.yml
 
 /venv/
 replacement.txt
+
+src/main/resources/static/uploads
+uploads
