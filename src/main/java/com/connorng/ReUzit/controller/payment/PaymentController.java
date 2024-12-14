@@ -290,13 +290,25 @@ public class PaymentController {
                     Optional<User> userOptional = userService.findById(Long.parseLong(idUser));
                     Listing listing = listingService.findById(Long.parseLong(idListing));
 
+
                     if (!userOptional.isPresent()|| listing == null) {
                         response.sendError(HttpServletResponse.SC_NOT_FOUND, "User or Listing not found");
                         return;
                     }
                     long actualAmount = Long.parseLong(price) / 100;
                     User user = userOptional.get();
+                    if(!listing.isDeleted() && listing.getStatus() == Status.ACTIVE){
+                        User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
+                                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
 
+                        admin.setMoney(admin.getMoney() + listing.getPrice());
+                        userService.save(admin);
+                    }else {
+                        user.setMoney(user.getMoney() + actualAmount);
+                        userService.save(user);
+                        response.sendRedirect("http://localhost:5173/transaction-failed");
+                        return;
+                    }
                     // Create object order
                     Order order = new Order();
                     order.setShippingAddress(address);
@@ -314,12 +326,6 @@ public class PaymentController {
                     payment.setAmount(listing.getPrice());
                     Payment savedPayment = paymentService.addPayment(payment);
 
-                    User admin = userService.findFirstByRole(Roles.ROLE_ADMIN)
-                            .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
-
-                    // add money for admin
-                    admin.setMoney(admin.getMoney() + listing.getPrice());
-                    userService.save(admin);
                     // **Create and save Transaction**
                     Transaction transaction = new Transaction();
                     transaction.setPayment(savedPayment);

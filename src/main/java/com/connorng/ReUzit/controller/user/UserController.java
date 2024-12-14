@@ -5,6 +5,7 @@ import com.connorng.ReUzit.model.User;
 import com.connorng.ReUzit.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,6 +31,13 @@ public class UserController {
     @PostMapping
     public User createUser(@ModelAttribute User user) {
         return userService.save(user);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> findById(@PathVariable Long id) {
+        Optional<User> user = userService.findById(id);
+        return user.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/me")

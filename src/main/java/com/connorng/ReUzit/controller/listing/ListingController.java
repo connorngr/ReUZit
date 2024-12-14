@@ -55,7 +55,6 @@ public class ListingController {
         }
     }
 
-
     @GetMapping("/category/{categoryId}/active")
     public ResponseEntity<List<Listing>> getActiveListingsByCategoryId(@PathVariable Long categoryId) {
         List<Listing> listings = listingService.getListingsByCategoryIdAndActiveStatus(categoryId);
