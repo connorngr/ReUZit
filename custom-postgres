@@ -1,0 +1,9 @@
+# Dockerfile-postgres
+FROM postgres:latest
+# Set environment variables for PostgreSQL
+ENV POSTGRES_USER=connorng
+ENV POSTGRES_PASSWORD=q
+ENV POSTGRES_DB=reuzit
+
+# Expose PostgreSQL port
+EXPOSE 5432
